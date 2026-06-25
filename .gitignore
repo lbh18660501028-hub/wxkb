@@ -1,0 +1,48 @@
+# ==================== 依赖与构建产物 ====================
+node_modules/
+dist/
+*.local
+
+# ==================== Vite 缓存 ====================
+*.vite/
+.vite/
+
+# ==================== 日志文件 ====================
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ==================== 数据库 ====================
+*.db
+*.sqlite
+*.sqlite3
+
+# ==================== 编辑器 / IDE ====================
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+
+# ==================== 操作系统 ====================
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# ==================== 环境变量 ====================
+.env
+.env.*
+!.env.example
+
+# ==================== CatPaw 截图（临时） ====================
+.catpaw/screenshots/
+
+# ==================== 参考资源（非本项目代码） ====================
+# xiugexian 是参考站点，infinite-horror 是另一个项目
+# 如需排除，取消下面注释：
+# xiugexian.pages.dev/
+# infinite-horror/

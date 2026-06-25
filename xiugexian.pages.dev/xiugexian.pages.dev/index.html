@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/x-icon" href="./icon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>挂机修个仙</title>
+    <script>
+      // 反修改器：在最早时机冻结定时器和关键API，防止游戏加速器劫持
+      (function() {
+        'use strict';
+        var _si = window.setInterval;
+        var _st = window.setTimeout;
+        var _ci = window.clearInterval;
+        var _ct = window.clearTimeout;
+        var _now = Date.now;
+        var _pnow = performance.now;
+
+        // 冻结定时器函数，阻止覆写
+        Object.defineProperty(window, 'setInterval', { value: _si, writable: false, configurable: false });
+        Object.defineProperty(window, 'setTimeout', { value: _st, writable: false, configurable: false });
+        Object.defineProperty(window, 'clearInterval', { value: _ci, writable: false, configurable: false });
+        Object.defineProperty(window, 'clearTimeout', { value: _ct, writable: false, configurable: false });
+        Object.defineProperty(Date, 'now', { value: _now, writable: false, configurable: false });
+        Object.defineProperty(performance, 'now', { value: _pnow, writable: false, configurable: false });
+      })();
+    </script>
+    <script type="module" crossorigin src="./assets/index-DODPLJn9.js"></script>
+    <link rel="modulepreload" crossorigin href="./assets/dexie-BqfePpic.js">
+    <link rel="modulepreload" crossorigin href="./assets/vendor-vI7ARg3R.js">
+    <link rel="modulepreload" crossorigin href="./assets/game-core-DcFqKbQk.js">
+    <link rel="modulepreload" crossorigin href="./assets/naive-ui-p-nhsNIP.js">
+    <link rel="stylesheet" crossorigin href="./assets/index-CKjkQbkI.css">
+  <link rel="manifest" href="./manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="./registerSW.js"></script></head>
+  <body>
+    <div id="app-eea1101b"></div>
+  </body>
+</html>
