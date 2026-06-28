@@ -1,18 +1,17 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import LoginScreen from './components/LoginScreen.vue'
 import AccountSystem from './components/AccountSystem.vue'
 import CharacterCreate from './components/CharacterCreate.vue'
 import NavBar from './components/NavBar.vue'
 import SidebarLeft from './components/SidebarLeft.vue'
 import SquadStatus from './components/SquadStatus.vue'
+import GeneLockStatus from './components/GeneLockStatus.vue'
 import { useGameStore } from './stores/game'
-import { computed, onMounted } from 'vue'
 
 import HomePage from './components/pages/HomePage.vue'
 import CyclePage from './components/pages/CyclePage.vue'
 import PersonalPage from './components/pages/PersonalPage.vue'
-import ScenarioPage from './components/pages/ScenarioPage.vue'
 import ShopPage from './components/pages/ShopPage.vue'
 import ExchangePage from './components/pages/ExchangePage.vue'
 import EquipmentPage from './components/pages/EquipmentPage.vue'
@@ -28,14 +27,15 @@ import EnergyPage from './components/pages/EnergyPage.vue'
 import TitlePage from './components/pages/TitlePage.vue'
 import MultiversePage from './components/pages/MultiversePage.vue'
 import SkillsPage from './components/pages/SkillsPage.vue'
-import DungeonMapPage from './components/pages/DungeonMapPage.vue'
+import DungeonGridPage from './components/pages/DungeonGridPage.vue'
 
 const store = useGameStore()
 
 type Screen = 'login' | 'account' | 'characterCreate' | 'game'
-const currentScreen = ref<Screen>('login')
 
-// 如果已完成角色创建，直接进入游戏
+const SKIP_AUTH = true
+const currentScreen = ref<Screen>(SKIP_AUTH ? 'characterCreate' : 'login')
+
 onMounted(() => {
   if (store.isCharacterCreated()) {
     currentScreen.value = 'game'
@@ -46,7 +46,6 @@ const pageComponents: Record<string, any> = {
   home: HomePage,
   cycle: CyclePage,
   personal: PersonalPage,
-  scenario: DungeonMapPage,
   shop: ShopPage,
   exchange: ExchangePage,
   equipment: EquipmentPage,
@@ -62,19 +61,18 @@ const pageComponents: Record<string, any> = {
   title: TitlePage,
   multiverse: MultiversePage,
   skills: SkillsPage,
-  dungeon: DungeonMapPage,
+  dungeonGrid: DungeonGridPage,
 }
 
 const currentComponent = computed(() => pageComponents[store.currentPage] || HomePage)
 
 const pageNames: Record<string, string> = {
   home: '主神空间',
-  cycle: '再入轮回',
+  cycle: '挂机训练',
   personal: '个人空间',
-  scenario: '开启副本',
-  dungeon: '开启副本',
+  dungeonGrid: '网格副本',
   shop: '购买空间',
-  exchange: '支线互换',
+  exchange: '支线兑换',
   equipment: '装备管理',
   geneLock: '基因锁',
   guide: '新手攻略',
@@ -91,7 +89,7 @@ const pageNames: Record<string, string> = {
 }
 
 const currentPageName = computed(() => pageNames[store.currentPage] || '主神空间')
-const showBackButton = computed(() => store.currentPage !== 'home')
+const showBackButton = computed(() => store.currentPage !== 'home' && store.currentPage !== 'dungeonGrid')
 const currentDungeonNav = computed(() => store.dungeonNav)
 
 function handleEnter() {
@@ -116,13 +114,12 @@ function handleCharacterComplete(data: {
 </script>
 
 <template>
-  <LoginScreen v-if="currentScreen === 'login'" @enter="handleEnter" />
-  <AccountSystem v-if="currentScreen === 'account'" @login="handleLogin" />
+  <LoginScreen v-if="!SKIP_AUTH && currentScreen === 'login'" @enter="handleEnter" />
+  <AccountSystem v-if="!SKIP_AUTH && currentScreen === 'account'" @login="handleLogin" />
   <CharacterCreate v-if="currentScreen === 'characterCreate'" @complete="handleCharacterComplete" />
 
   <Transition name="fade-in">
     <div v-if="currentScreen === 'game'" class="game-layout">
-      <!-- Deep-space background layers -->
       <div class="starfield"></div>
       <div class="dark-matter"></div>
       <div class="text-noise-overlay"></div>
@@ -143,16 +140,23 @@ function handleCharacterComplete(data: {
               </template>
               <span v-else class="current-page-name">{{ currentPageName }}</span>
             </div>
-            <button v-if="currentDungeonNav" class="dungeon-nav-leave" @click="store.requestDungeonExit">离开副本</button>
+            <button
+              v-if="currentDungeonNav && store.currentPage !== 'dungeonGrid'"
+              class="dungeon-nav-leave"
+              @click="store.requestDungeonExit"
+            >
+              离开副本
+            </button>
           </div>
           <component :is="currentComponent" />
         </main>
-        <SquadStatus />
+        <aside class="sidebar-right">
+          <GeneLockStatus />
+          <SquadStatus :show-vitals="false" :show-broadcast="true" />
+        </aside>
       </div>
     </div>
   </Transition>
-
-  <div v-if="currentScreen === 'game'" class="automation-fab" @click="store.setPage('dungeon')">⚔</div>
 </template>
 
 <style>
@@ -166,6 +170,7 @@ function handleCharacterComplete(data: {
 .fade-in-enter-active {
   transition: opacity 0.8s ease;
 }
+
 .fade-in-enter-from {
   opacity: 0;
 }

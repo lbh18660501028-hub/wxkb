@@ -3,7 +3,7 @@
  * 
  * ==================== 设计概述 ====================
  * MP上限 = 智力 × 10
- * 魔法伤害 = 精神力 × 2 + 法术基础伤害
+ * 魔法伤害 = 决心 × 2 + 法术基础伤害
  * 
  * ==================== 法术分类 ====================
  * - 火系：高伤害，附加燃烧
@@ -195,11 +195,11 @@ export function getSpellsByElement(element: Element): SpellConfig[] {
 }
 
 /**
- * 获取法术伤害（基础伤害 + 精神力加成）
+ * 获取法术伤害（基础伤害 + 决心加成）
  * @param spell 法术配置
- * @param spirit 精神力属性值
- * @returns 最终魔法伤害
- */
-export function getSpellDamage(spell: SpellConfig, spirit: number): number {
-  return spell.baseDamage + spirit * 2
+* @param resolve 决心属性值
+* @returns 最终魔法伤害
+*/
+export function getSpellDamage(spell: SpellConfig, resolve: number): number {
+return spell.baseDamage + resolve * 2
 }

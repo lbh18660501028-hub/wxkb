@@ -155,7 +155,7 @@ export const MP_CONFIG = {
   
   // 魔法伤害公式
   MAGIC_DAMAGE_BASE: 0,         // 魔法伤害基础值
-  SPIRIT_DAMAGE_MULTIPLIER: 2,  // 精神力魔法伤害倍率
+  RESOLVE_DAMAGE_MULTIPLIER: 2,  // 决心魔法伤害倍率
 }
 
 // ==================== 体积配置 ====================
@@ -185,17 +185,17 @@ export const VOLUME_CONFIG = {
 // ==================== 免疫配置 ====================
 
 /**
- * 免疫属性配置
- * 免疫强度影响：状态抗性、异常状态持续时间减免
+ * 沉着属性配置
+ * 沉着影响：状态抗性、异常状态持续时间减免
  */
-export const IMMUNITY_CONFIG = {
-  // 每点免疫提供的状态抗性（百分比）
+export const COMPOSURE_CONFIG = {
+  // 每点沉着提供的状态抗性（百分比）
   STATUS_RESIST_PER_POINT: 0.01,
   
   // 最大状态抗性
   MAX_STATUS_RESIST: 0.8,
   
-  // 免疫强度等级效果
+  // 沉着等级效果
   TIERS: [
     { threshold: 5, name: '弱', resistBonus: 0 },
     { threshold: 10, name: '中', resistBonus: 0.1 },
@@ -212,7 +212,7 @@ export const IMMUNITY_CONFIG = {
  */
 export const HP_CONFIG = {
   BASE_HP: 100,                 // 基础HP
-  VITALITY_HP_MULTIPLIER: 10,   // 活力HP倍率
+  ENDURANCE_HP_MULTIPLIER: 10,  // 耐力HP倍率（HP = BASE + END × 10）
   GENE_LOCK_HP_BONUS: 10,       // 基因锁每阶HP加成
   VOLUME_HP_BONUS: 0.1,         // 体积HP加成系数
 }
@@ -221,7 +221,7 @@ export const HP_CONFIG = {
  * 意志力公式配置
  */
 export const WILLPOWER_CONFIG = {
-  // 意志力 = 精神力 + 智力
+  // 意志力 = 决心 + 沉着
 }
 
 // ==================== 经验值配置 ====================
@@ -246,6 +246,53 @@ export const IDLE_CONFIG = {
   STAT_BONUS_PER_POINT: 0.01,   // 每点属性提供的挂机奖励加成（1%）
 }
 
+// ==================== 属性定义与分组 ====================
+
+/** 九属性 ID 类型 */
+export type AttributeId =
+  | 'strength' | 'agility' | 'endurance'
+  | 'intelligence' | 'perception' | 'resolve'
+  | 'presence' | 'manipulation' | 'composure'
+
+/** 属性分组 */
+export const ATTRIBUTE_GROUPS: Record<string, AttributeId[]> = {
+  physical: ['strength', 'agility', 'endurance'],
+  mental: ['intelligence', 'perception', 'resolve'],
+  social: ['presence', 'manipulation', 'composure'],
+}
+
+/** 属性中文名 */
+export const ATTRIBUTE_LABELS: Record<AttributeId, string> = {
+  strength: '力量',
+  agility: '敏捷',
+  endurance: '耐力',
+  intelligence: '智力',
+  perception: '感知',
+  resolve: '决心',
+  presence: '风度',
+  manipulation: '操控',
+  composure: '沉着',
+}
+
+/** 属性详细定义（图标、颜色、分组、描述） */
+export const ATTRIBUTE_DEFS: Record<AttributeId, {
+  icon: string
+  color: string
+  group: string
+  label: string
+  desc: string
+}> = {
+  strength:     { icon: '💪', color: '#ff6b35', group: 'physical', label: '力量', desc: '影响科技本质攻击力。' },
+  agility:      { icon: '⚡', color: '#ffb000', group: 'physical', label: '敏捷', desc: '影响速度、命中与闪避。' },
+  endurance:    { icon: '❤', color: '#ff0033', group: 'physical', label: '耐力', desc: '决定生命上限与续航。' },
+  intelligence: { icon: '🧠', color: '#b026ff', group: 'mental', label: '智力', desc: '影响MP上限与法术成长。' },
+  perception:   { icon: '👁', color: '#00c8ff', group: 'mental', label: '感知', desc: '影响暴击率与察觉能力。' },
+  resolve:      { icon: '◈', color: '#00f0ff', group: 'mental', label: '决心', desc: '影响魔幻伤害与意志力。' },
+  presence:     { icon: '✦', color: '#ffd700', group: 'social', label: '风度', desc: '影响社交压迫与特异伤害。' },
+  manipulation: { icon: '🎭', color: '#ff3366', group: 'social', label: '操控', desc: '影响交际与特异伤害。' },
+  composure:    { icon: '🛡', color: '#39ff14', group: 'social', label: '沉着', desc: '影响抗性、减伤与意志力。' },
+}
+
 // ==================== 属性配置 ====================
 
 /**
@@ -264,33 +311,37 @@ export const ATTRIBUTE_CONFIG = {
     { threshold: Infinity, cost: 1500 },
   ],
   
-  // 属性效果
-  EFFECTS: {
-    STRENGTH: {
-      TECHNOLOGY_DAMAGE: 1,     // 每点肌肉强度提供的科技本质伤害
-    },
-    REACTION: {
-      SPEED: 1,                 // 每点神经反应提供的速度
-      DODGE: 1,                 // 每点神经反应提供的闪避
-    },
-    INTELLIGENCE: {
-      MP: 10,                   // 每点智力提供的MP
-      CRIT_RATE: 0.01,          // 每点智力提供的暴击率（1%）
-    },
-    VITALITY: {
-      HP: 10,                   // 每点细胞活力提供的HP
-      HP_REGEN: 0.5,            // 每点细胞活力提供的每回合HP回复
-    },
-    SPIRIT: {
-      WILLPOWER: 1,             // 每点精神力提供的意志力
-      FANTASY_DAMAGE: 2,        // 每点精神力提供的魔幻本质伤害
-      FANTASY_DEFENSE: 1,       // 每点精神力提供的魔幻本质防御
-    },
-    IMMUNITY: {
-      STATUS_RESIST: 0.01,      // 每点免疫强度提供的状态抗性（1%）
-      DAMAGE_REDUCTION: 0.01,   // 每点免疫强度提供的物理伤害减免（1%）
-      CRIT_RESIST: 0.01,        // 每点免疫强度降低被暴击概率（1%）
-    },
+  // 衍生属性公式
+  DERIVED: {
+    // HP = BASE_HP + endurance × ENDURANCE_HP_MULTIPLIER
+    ENDURANCE_HP_MULTIPLIER: 10,
+    // MP = intelligence × INTELLIGENCE_MP_MULTIPLIER
+    INTELLIGENCE_MP_MULTIPLIER: 10,
+    // willpower = resolve + composure
+    // speed = agility + composure (+ volume modifier)
+    // defense = agility
+    // mentalDefense = resolve + composure
+    // senseRange = perception × 10
+    // statusResistance = endurance + composure
+    // fearResistance = resolve + composure
+    // socialPressure = presence + manipulation
+  },
+  
+  // 战斗属性映射
+  COMBAT_MAPPING: {
+    // technologyAttack = strength
+    // fantasyAttack = resolve × 2
+    // abnormalAttack = floor((resolve + presence) / 2)
+    // technologyDefense = endurance
+    // fantasyDefense = resolve
+    // abnormalDefense = composure
+    // speed = agility + composure
+    // evasion = agility × 0.01
+    // critRate = perception × 0.01
+    // hit = 0.75 + perception × 0.005
+    // damageReduction = endurance × 0.005
+    // critResist = composure × 0.01
+    // stunResist = composure × 0.01
   },
 }
 

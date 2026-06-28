@@ -77,18 +77,17 @@ export interface CombatRound {
 
 type PlayerAttrs = {
   strength: number
-  reaction: number
-  spirit: number
+  agility: number
+  endurance: number
   intelligence: number
-  vitality: number
-  immunity: number
+  perception: number
+  resolve: number
+  presence: number
+  manipulation: number
+  composure: number
 }
 
-type PlayerSkills = {
-  melee: number
-  ranged: number
-  dodge: number
-}
+/** 技能与战斗完全解绑，不再需要 PlayerSkills 类型 */
 
 type LegacyBuffs = Partial<AdvancedCombatStats> & {
   crit?: number
@@ -157,18 +156,17 @@ function pick(value: number | undefined, fallback: number): number {
 
 function buildPlayerStats(
   playerAttrs: PlayerAttrs,
-  playerSkills: PlayerSkills,
   playerBuffs: LegacyBuffs,
   attackStyle: 'melee' | 'ranged',
 ): AdvancedCombatStats {
-  const attackSkill = attackStyle === 'melee' ? playerSkills.melee : playerSkills.ranged
   const weaponAttack = playerBuffs.weaponAttack || 0
   const skillCoefficient = playerBuffs.attackMode === 'skill' ? Math.max(1, playerBuffs.skillCoefficient || 1) : 1
-  const proficiencyBonus = pick(playerBuffs.proficiencyBonus, attackSkill * 2)
+  const proficiencyBonus = pick(playerBuffs.proficiencyBonus, 0)
 
+  // 九属性战斗公式（基于 config/combat.ts ATTRIBUTE_CONFIG.COMBAT_MAPPING）
   const baseTech = playerBuffs.technologyAttack ?? (8 + playerAttrs.strength * 2)
-  const baseFant = playerBuffs.fantasyAttack ?? (6 + playerAttrs.spirit * 3 + playerAttrs.intelligence)
-  const baseAbn = playerBuffs.abnormalAttack ?? (6 + playerAttrs.spirit * 2 + playerAttrs.intelligence * 2)
+  const baseFant = playerBuffs.fantasyAttack ?? (6 + playerAttrs.resolve * 3 + playerAttrs.intelligence)
+  const baseAbn = playerBuffs.abnormalAttack ?? (6 + playerAttrs.resolve * 2 + playerAttrs.presence)
 
   const techAttack = baseTech * skillCoefficient + weaponAttack + proficiencyBonus
   const fantAttack = baseFant * skillCoefficient + weaponAttack + proficiencyBonus
@@ -178,34 +176,34 @@ function buildPlayerStats(
     technologyAttack: Math.max(0, Math.floor(techAttack)),
     fantasyAttack: Math.max(0, Math.floor(fantAttack)),
     abnormalAttack: Math.max(0, Math.floor(abnAttack)),
-    technologyDefense: pick(playerBuffs.technologyDefense, playerAttrs.reaction + Math.floor(playerAttrs.immunity * 0.5)),
-    fantasyDefense: pick(playerBuffs.fantasyDefense, playerAttrs.spirit + playerAttrs.immunity),
-    abnormalDefense: pick(playerBuffs.abnormalDefense, playerAttrs.intelligence + Math.floor(playerAttrs.spirit * 0.5) + playerAttrs.immunity),
+    technologyDefense: pick(playerBuffs.technologyDefense, playerAttrs.endurance),
+    fantasyDefense: pick(playerBuffs.fantasyDefense, playerAttrs.resolve),
+    abnormalDefense: pick(playerBuffs.abnormalDefense, playerAttrs.composure),
     physicalAttack: 0,
     magicAttack: 0,
     physicalDefense: 0,
     magicDefense: 0,
-    critRate: pick(playerBuffs.critRate, playerAttrs.intelligence * 0.01),
+    critRate: pick(playerBuffs.critRate, playerAttrs.perception * 0.01),
     critDamage: pick(playerBuffs.critDamage, COMBAT_CONFIG.CRIT_MULTIPLIER),
-    critResist: pick(playerBuffs.critResist, playerAttrs.immunity * 0.01),
-    hit: pick(playerBuffs.hit, 0.75 + playerAttrs.reaction * 0.01 + attackSkill * 0.02),
-    evasion: pick(playerBuffs.evasion, 0.05 + playerAttrs.reaction * 0.01 + playerSkills.dodge * 0.02),
+    critResist: pick(playerBuffs.critResist, playerAttrs.composure * 0.01),
+    hit: pick(playerBuffs.hit, 0.75 + playerAttrs.perception * 0.005),
+    evasion: pick(playerBuffs.evasion, playerAttrs.agility * 0.01),
     counterRate: pick(playerBuffs.counterRate, 0),
     reflectRate: pick(playerBuffs.reflectRate, 0),
     comboRate: pick(playerBuffs.comboRate, 0),
     shield: pick(playerBuffs.shield, 0),
     shieldRegen: pick(playerBuffs.shieldRegen, 0),
     stunRate: pick(playerBuffs.stunRate, 0),
-    stunResist: pick(playerBuffs.stunResist, playerAttrs.immunity * 0.01),
+    stunResist: pick(playerBuffs.stunResist, playerAttrs.composure * 0.01),
     lifeSteal: pick(playerBuffs.lifeSteal, 0),
-    damageReduction: pick(playerBuffs.damageReduction, playerAttrs.immunity * 0.01),
+    damageReduction: pick(playerBuffs.damageReduction, playerAttrs.endurance * 0.005),
     penetration: pick(playerBuffs.penetration, 0),
     armorBreak: pick(playerBuffs.armorBreak, 0),
     blockRate: pick(playerBuffs.blockRate, 0),
-    toughness: pick(playerBuffs.toughness, playerAttrs.immunity * 0.01 + playerAttrs.vitality * 0.01),
+    toughness: pick(playerBuffs.toughness, playerAttrs.composure * 0.01 + playerAttrs.endurance * 0.005),
     trueDamage: pick(playerBuffs.trueDamage, 0),
     trueDefense: pick(playerBuffs.trueDefense, 0),
-    speed: pick(playerBuffs.speed, playerAttrs.reaction + playerAttrs.strength + 5),
+    speed: pick(playerBuffs.speed, playerAttrs.agility + playerAttrs.composure),
   }
 }
 
@@ -396,7 +394,6 @@ function calculateCounterDamage(attacker: AdvancedCombatStats, defender: Advance
 
 function createRound(
   playerAttrs: PlayerAttrs,
-  playerSkills: PlayerSkills,
   enemy: EnemyInput,
   playerBuffs: LegacyBuffs,
   playerDamageType: DamageType,
@@ -407,7 +404,7 @@ function createRound(
 ): CombatRound {
   const logs: string[] = []
   const statusEffectsApplied: { type: StatusEffectType; target: 'player' | 'enemy' }[] = []
-  const playerStats = buildPlayerStats(playerAttrs, playerSkills, playerBuffs, attackStyle)
+  const playerStats = buildPlayerStats(playerAttrs, playerBuffs, attackStyle)
   const enemyStats = buildEnemyStats(enemy)
   const playerAttackLabel = playerBuffs.attackMode === 'skill' ? '技能攻击' : '普通攻击'
 
@@ -539,7 +536,6 @@ function createRound(
 
 export function simulateCombatRound(
   playerAttrs: PlayerAttrs,
-  playerSkills: PlayerSkills,
   enemy: EnemyInput,
   playerBuffs: LegacyBuffs = { crit: 0, dodge: 0, armor: 0, magicDefense: 0 },
   playerDamageType: DamageType = 'physical',
@@ -547,12 +543,11 @@ export function simulateCombatRound(
   playerCurrentHp?: number,
   enemyCurrentHp?: number,
 ): CombatRound {
-  return createRound(playerAttrs, playerSkills, enemy, playerBuffs, playerDamageType, enemyDamageType, 'ranged', playerCurrentHp, enemyCurrentHp)
+  return createRound(playerAttrs, enemy, playerBuffs, playerDamageType, enemyDamageType, 'ranged', playerCurrentHp, enemyCurrentHp)
 }
 
 export function simulateMeleeCombat(
   playerAttrs: PlayerAttrs,
-  playerSkills: PlayerSkills,
   enemy: EnemyInput,
   playerBuffs: LegacyBuffs = { crit: 0, dodge: 0, armor: 0, magicDefense: 0 },
   playerDamageType: DamageType = 'physical',
@@ -560,19 +555,28 @@ export function simulateMeleeCombat(
   playerCurrentHp?: number,
   enemyCurrentHp?: number,
 ): CombatRound {
-  return createRound(playerAttrs, playerSkills, enemy, playerBuffs, playerDamageType, enemyDamageType, 'melee', playerCurrentHp, enemyCurrentHp)
+  return createRound(playerAttrs, enemy, playerBuffs, playerDamageType, enemyDamageType, 'melee', playerCurrentHp, enemyCurrentHp)
 }
 
+/**
+ * 技能检定
+ *
+ * ==================== 检定公式（基于TRPG核心规则） ====================
+ * 骰池 DP 由调用方计算：
+ * - 有技能：DP = max(floor(属性值 / 5), 1) + 技能等级
+ * - 默认骰：DP = max(floor(属性值 / 5), 1) + DC档位基础骰
+ *
+ * 每枚 D10 ≥ 8 计 1 成功，掷出 10 额外加投 1 枚（最多 2 次加投）
+ * 技能等级 ≥3/6/9/12 分别追加 +1/+2/+3/+4 自动成功
+ * 总成功数 ≥ DC 即为检定成功
+ */
 export function rollSkillCheck(
-  attrValue: number,
-  skillValue: number,
+  dp: number,
+  skillBonus: number,
   dc: number,
 ): { success: boolean; rolls: number[]; bonusRolls: number[]; total: number; dc: number } {
-  const dp = attrValue + skillValue
   const result = rollDice(dp)
-  const attrBonus = getAttrBonus(attrValue)
-  const skillBonus = getSkillBonus(skillValue)
-  const total = result.totalSuccesses + attrBonus + skillBonus
+  const total = result.totalSuccesses + skillBonus
 
   return {
     success: total >= dc,

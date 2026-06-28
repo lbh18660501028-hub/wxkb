@@ -11,15 +11,15 @@ interface NavItem {
 }
 
 const primaryItems: NavItem[] = [
-  { id: 'home', icon: '◉', label: 'LORD SPACE' },
-  { id: 'personal', icon: '◈', label: 'PERSONAL' },
+  { id: 'home', icon: '◈', label: '主神空间' },
+  { id: 'personal', icon: '◎', label: '个人空间' },
 ]
 
 const secondaryItems: NavItem[] = [
-  { id: 'cycle', icon: '↻', label: 'REINCARNATE' },
-  { id: 'dungeon', icon: '⚔', label: 'DUNGEON' },
-  { id: 'guide', icon: '▣', label: 'GUIDE' },
-  { id: 'settings', icon: '⚙', label: 'SETTINGS' },
+  { id: 'cycle', icon: '↺', label: '挂机训练' },
+  { id: 'dungeonGrid', icon: '⚔', label: '网格副本' },
+  { id: 'guide', icon: '▣', label: '新手引导' },
+  { id: 'settings', icon: '⚙', label: '系统设置' },
 ]
 
 const sidePlotTiers = ['D', 'C', 'B', 'A', 'S'] as const
@@ -28,14 +28,12 @@ const sidePlotTiers = ['D', 'C', 'B', 'A', 'S'] as const
 <template>
   <nav class="nav-bar">
     <div class="nav-wrapper">
-      <!-- Title with bracket accent -->
       <div class="game-title">
         <span class="title-bracket">[</span>
-        <span class="title-main">◉ INFINITE HORROR</span>
+        <span class="title-main">无限恐怖</span>
         <span class="title-bracket">]</span>
       </div>
 
-      <!-- Nav items -->
       <div class="nav-items">
         <div
           v-for="item in primaryItems"
@@ -60,13 +58,11 @@ const sidePlotTiers = ['D', 'C', 'B', 'A', 'S'] as const
         </div>
       </div>
 
-      <!-- Currency readouts -->
       <div class="nav-right">
-        <!-- Reward Points -->
         <div class="currency-display currency-rp refresh-flicker">
-          <span class="icon">◆</span>
+          <span class="icon">◈</span>
           <div class="currency-readout">
-            <span class="label">RP</span>
+            <span class="label">奖励点</span>
             <span class="value tick-num">{{ store.rewardPoints.toLocaleString() }}</span>
             <div class="micro-bar">
               <div class="micro-bar-fill rp"></div>
@@ -74,11 +70,10 @@ const sidePlotTiers = ['D', 'C', 'B', 'A', 'S'] as const
           </div>
         </div>
 
-        <!-- Side Plots -->
         <div class="currency-display currency-sp">
-          <span class="icon">▤</span>
+          <span class="icon">▣</span>
           <div class="currency-readout">
-            <span class="label">SIDE PLOT</span>
+            <span class="label">支线剧情</span>
             <div class="sp-tiers">
               <span
                 v-for="tier in sidePlotTiers"
@@ -90,7 +85,6 @@ const sidePlotTiers = ['D', 'C', 'B', 'A', 'S'] as const
           </div>
         </div>
 
-        <!-- XP -->
         <div class="currency-display currency-xp refresh-flicker">
           <span class="icon">⚡</span>
           <div class="currency-readout">
@@ -98,13 +92,12 @@ const sidePlotTiers = ['D', 'C', 'B', 'A', 'S'] as const
             <span class="value xp-val tick-num">{{ store.xp }}/{{ store.xpMax }}</span>
             <div class="micro-bar xp-track">
               <div class="micro-bar-fill xp" :style="{ width: Math.min(100, (store.xp / store.xpMax) * 100) + '%' }"></div>
-              <!-- Shimmer effect on XP bar -->
               <div class="xp-shimmer"></div>
             </div>
           </div>
         </div>
 
-        <button class="sign-in-btn">▣ SIGN IN</button>
+        <button class="sign-in-btn">签到</button>
       </div>
     </div>
   </nav>
@@ -178,7 +171,6 @@ const sidePlotTiers = ['D', 'C', 'B', 'A', 'S'] as const
   box-shadow: 0 0 4px var(--neon-amber);
 }
 
-/* XP tracker with shimmer */
 .xp-track {
   position: relative;
   overflow: hidden;

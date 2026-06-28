@@ -171,21 +171,21 @@ export function getStatusEffectConfig(type: StatusEffectType): StatusEffectConfi
 
 /**
  * 计算状态抵抗概率
- * 免疫强度每点提供2%抗性
- * @param immunity 免疫强度属性值
+ * 沉着每点提供1%抗性
+ * @param composure 沉着属性值
  * @returns 抵抗概率（0-1）
  */
-export function calculateStatusResistance(immunity: number): number {
-  return Math.min(0.8, immunity * 0.01) // 最高80%抗性
+export function calculateStatusResistance(composure: number): number {
+  return Math.min(0.8, composure * 0.01) // 最高80%抗性
 }
 
 /**
  * 判断是否抵抗状态
- * @param immunity 免疫强度属性值
+ * @param composure 沉着属性值
  * @returns 是否抵抗
  */
-export function rollStatusResist(immunity: number): boolean {
-  const resistance = calculateStatusResistance(immunity)
+export function rollStatusResist(composure: number): boolean {
+  const resistance = calculateStatusResistance(composure)
   return Math.random() < resistance
 }
 
@@ -193,16 +193,16 @@ export function rollStatusResist(immunity: number): boolean {
  * 应用状态效果
  * @param currentEffects 当前状态列表
  * @param newEffect 要添加的新状态
- * @param immunity 免疫强度（用于抵抗判定）
+ * @param composure 沉着属性值（用于抵抗判定）
  * @returns 更新后的状态列表
  */
 export function applyStatusEffect(
   currentEffects: ActiveStatusEffect[],
   newEffect: { type: StatusEffectType; duration: number; source: 'player' | 'enemy' },
-  immunity: number
+  composure: number
 ): ActiveStatusEffect[] {
   // 检查是否抵抗
-  if (rollStatusResist(immunity)) {
+  if (rollStatusResist(composure)) {
     return currentEffects
   }
 

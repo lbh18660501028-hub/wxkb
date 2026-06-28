@@ -1,28 +1,31 @@
 /**
  * 技能系统配置
- * 
+ *
  * ==================== 技能概述 ====================
- * 技能 = 属性 + 技能等级
- * - 属性：影响检定骰池大小
- * - 技能等级：影响附加成功和检定结果
- * 
- * ==================== 技能分类 ====================
- * 物理技能：依赖肌肉强度/神经反应
- * 精神技能：依赖智力/精神力
- * 社交技能：依赖魅力/意志
- * 
+ * 技能 = 后天学习的专业能力，仅作用于副本中的骰子检定
+ * 技能与战斗系统完全解绑，战斗属性纯由属性+装备驱动
+ *
+ * 检定公式（基于TRPG核心规则）：
+ * - 骰池 DP = 关联属性值 + 技能等级 + 调整值
+ * - 每个D10 ≥ 8 计1成功，掷出10额外加投1个
+ * - 属性加成：≥6→+1, ≥11→+2, ≥16→+3, ≥21→+4
+ * - 技能加成：3级→+1, 6级→+2, 9级→+3, 12级→+4
+ * - 总成功数 ≥ DC 即为检定成功
+ *
+ * ==================== 成长系统 ====================
+ * 双途径成长：
+ * 1. XP升级：花费经验值提升技能等级
+ * 2. 用进成长：副本检定成功时有概率自动提升
+ *
  * ==================== 如何添加新技能 ====================
  * 1. 在此文件的 skills 数组中添加新技能
  * 2. 确保 id 唯一
- * 3. 设置 category（分类）
- * 4. 设置 relatedAttr（关联属性）
+ * 3. 设置 relatedAttr（默认关联属性，用于检定）
+ * 4. 设置 altAttrs（备选属性，供副本事件覆盖）
  * 5. 设置 description（描述）
  */
 
-/**
- * 技能分类
- */
-export type SkillCategory = 'physical' | 'mental' | 'social'
+import type { AttributeId } from '../config/combat'
 
 /**
  * 技能配置
@@ -30,8 +33,8 @@ export type SkillCategory = 'physical' | 'mental' | 'social'
 export interface SkillConfig {
   id: string                    // 唯一ID
   name: string                  // 技能名称
-  category: SkillCategory       // 技能分类
-  relatedAttr: string           // 关联属性（用于检定）
+  relatedAttr: AttributeId      // 默认关联属性（用于检定）
+  altAttrs: AttributeId[]       // 备选属性（副本事件可覆盖）
   description: string           // 技能描述
   icon: string                  // 图标
 }
@@ -78,137 +81,117 @@ export const SKILL_UPGRADE_COST: Record<number, number> = {
 // ==================== 技能数据 ====================
 
 /**
- * 所有技能列表
- * 
+ * 所有技能列表（10个，无分类）
+ *
  * 扩展新技能时，将技能对象添加到此数组
  */
 export const skills: SkillConfig[] = [
-  // ==================== 物理技能 ====================
   {
-    id: 'melee',
-    name: '肉搏',
-    category: 'physical',
-    relatedAttr: 'strength',
-    description: '使用拳头、腿法等近身格斗技巧',
-    icon: '👊',
-  },
-  {
-    id: 'white_blade',
-    name: '白刃',
-    category: 'physical',
-    relatedAttr: 'reaction',
-    description: '使用刀剑等近战武器进行战斗',
-    icon: '⚔️',
-  },
-  {
-    id: 'firearm',
-    name: '枪械',
-    category: 'physical',
-    relatedAttr: 'reaction',
-    description: '使用手枪、步枪等远程武器',
-    icon: '🔫',
-  },
-  {
-    id: 'archery',
-    name: '弓术',
-    category: 'physical',
-    relatedAttr: 'reaction',
-    description: '使用弓箭进行远程攻击',
-    icon: '🏹',
-  },
-  {
-    id: 'dodge',
-    name: '闪避',
-    category: 'physical',
-    relatedAttr: 'reaction',
-    description: '躲避敌人攻击的技巧',
-    icon: '💨',
-  },
-  {
-    id: 'survival',
-    name: '求生',
-    category: 'physical',
-    relatedAttr: 'vitality',
-    description: '在野外或危险环境中生存的能力',
-    icon: '🏕️',
-  },
-
-  // ==================== 精神技能 ====================
-  {
-    id: 'knowledge',
-    name: '学识',
-    category: 'mental',
-    relatedAttr: 'intelligence',
-    description: '知识储备和学习能力',
-    icon: '📚',
+    id: 'athletics',
+    name: '运动',
+    relatedAttr: 'agility',
+    altAttrs: ['strength', 'agility', 'endurance', 'resolve'],
+    description: '攀爬、跳跃、奔跑、游泳等身体运动能力',
+    icon: '🏃',
   },
   {
     id: 'investigation',
     name: '调查',
-    category: 'mental',
-    relatedAttr: 'intelligence',
-    description: '搜集信息和分析线索的能力',
+    relatedAttr: 'perception',
+    altAttrs: ['perception', 'intelligence', 'composure'],
+    description: '搜集信息、分析线索、搜索发现隐藏物品',
     icon: '🔍',
   },
   {
-    id: 'mysticism',
-    name: '神秘学',
-    category: 'mental',
-    relatedAttr: 'spirit',
-    description: '超自然知识和神秘力量',
+    id: 'lockpicking',
+    name: '开锁',
+    relatedAttr: 'agility',
+    altAttrs: ['agility', 'intelligence', 'strength', 'composure'],
+    description: '开锁、解除陷阱、操作机械装置',
+    icon: '🗝️',
+  },
+  {
+    id: 'lore',
+    name: '学识',
+    relatedAttr: 'intelligence',
+    altAttrs: ['intelligence', 'perception'],
+    description: '判断道具、物品的来历和用途，知识储备',
+    icon: '📚',
+  },
+  {
+    id: 'hacking',
+    name: '黑客',
+    relatedAttr: 'intelligence',
+    altAttrs: ['intelligence', 'composure', 'agility', 'manipulation'],
+    description: '操作电子设备、电脑、终端，破解安防系统',
+    icon: '💻',
+  },
+  {
+    id: 'medicine',
+    name: '医学',
+    relatedAttr: 'intelligence',
+    altAttrs: ['intelligence', 'perception', 'agility', 'composure'],
+    description: '医疗道具使用、生物状态判断、急救处理',
+    icon: '🏥',
+  },
+  {
+    id: 'occult',
+    name: '神秘',
+    relatedAttr: 'resolve',
+    altAttrs: ['intelligence', 'perception', 'resolve', 'presence'],
+    description: '超自然现象感知、神秘力量辨识',
     icon: '🔮',
   },
   {
-    id: 'meditation',
-    name: '冥想',
-    category: 'mental',
-    relatedAttr: 'spirit',
-    description: '精神集中和内心平静的修炼',
-    icon: '🧘',
+    id: 'animalHandling',
+    name: '动物沟通',
+    relatedAttr: 'perception',
+    altAttrs: ['perception', 'presence', 'manipulation', 'composure'],
+    description: '与动物沟通、驯服、安抚动物',
+    icon: '🐾',
   },
   {
-    id: 'willpower',
-    name: '意志',
-    category: 'mental',
-    relatedAttr: 'spirit',
-    description: '抵抗精神干扰和诱惑的能力',
-    icon: '💪',
+    id: 'empathy',
+    name: '感受',
+    relatedAttr: 'perception',
+    altAttrs: ['perception', 'composure', 'resolve'],
+    description: '判断NPC信息、意图、隐藏状态',
+    icon: '🧠',
   },
-
-  // ==================== 社交技能 ====================
   {
     id: 'persuasion',
-    name: '说服',
-    category: 'social',
-    relatedAttr: 'spirit',
-    description: '通过言语影响他人的能力',
+    name: '交际',
+    relatedAttr: 'manipulation',
+    altAttrs: ['manipulation', 'presence', 'composure', 'strength', 'resolve'],
+    description: '说服、交易、求助等对NPC操作的成功率',
     icon: '🗣️',
   },
-  {
-    id: 'intimidation',
-    name: '威吓',
-    category: 'social',
-    relatedAttr: 'strength',
-    description: '通过恐吓让对方屈服',
-    icon: '😠',
-  },
-  {
-    id: 'stealth',
-    name: '潜行',
-    category: 'social',
-    relatedAttr: 'reaction',
-    description: '不被发现地移动和隐藏',
-    icon: '🥷',
-  },
-  {
-    id: 'first_aid',
-    name: '急救',
-    category: 'social',
-    relatedAttr: 'intelligence',
-    description: '紧急医疗救助技能',
-    icon: '🏥',
-  },
 ]
+
+/** 所有新技能ID集合（用于存档迁移判断） */
+export const NEW_SKILL_IDS = skills.map(s => s.id)
+
+/**
+ * 旧技能ID列表（用于存档迁移清理）
+ * 包含旧版技能系统（melee/firearm/dodge等）和上一版技能ID（knowledge/mysticism/animal_handling/socializing）
+ */
+export const LEGACY_SKILL_IDS = [
+  'melee', 'white_blade', 'firearm', 'archery', 'dodge', 'survival',
+  'meditation', 'willpower', 'persuasion', 'intimidation', 'stealth', 'first_aid',
+  // 上一版 ID（需迁移到新 ID）
+  'knowledge', 'mysticism', 'animal_handling', 'socializing',
+]
+
+/**
+ * 旧技能ID → 新技能ID 映射表（用于存档迁移）
+ */
+export const SKILL_ID_MIGRATION: Record<string, string> = {
+  knowledge: 'lore',
+  mysticism: 'occult',
+  animal_handling: 'animalHandling',
+  socializing: 'persuasion',
+  dodge: 'athletics',
+}
 
 // ==================== 辅助函数 ====================
 
@@ -217,13 +200,6 @@ export const skills: SkillConfig[] = [
  */
 export function getSkillById(id: string): SkillConfig | undefined {
   return skills.find(s => s.id === id)
-}
-
-/**
- * 根据分类获取技能列表
- */
-export function getSkillsByCategory(category: SkillCategory): SkillConfig[] {
-  return skills.filter(s => s.category === category)
 }
 
 /**

@@ -1,11 +1,15 @@
+/**
+ * 技能修炼页面 — 扁平列表展示10个技能
+ * 技能与战斗完全解绑，仅作用于副本骰子检定
+ */
 <template>
   <div class="skills-page">
     <div class="page-title">⚡ 技能修炼</div>
-    
+
     <div class="skills-overview">
       <div class="stat-item">
-        <span class="stat-label">总技能点</span>
-        <span class="stat-value">{{ totalSkillPoints }}</span>
+        <span class="stat-label">总技能等级</span>
+        <span class="stat-value">{{ totalSkillLevels }}</span>
       </div>
       <div class="stat-item">
         <span class="stat-label">经验值</span>
@@ -13,37 +17,34 @@
       </div>
     </div>
 
-    <div class="skill-category" v-for="cat in categories" :key="cat.id">
-      <div class="category-title">{{ cat.icon }} {{ cat.name }}</div>
-      
-      <div class="skill-list">
-        <div 
-          v-for="skill in getSkillsByCategory(cat.id)" 
-          :key="skill.id"
-          class="skill-card"
-        >
-          <div class="skill-header">
-            <span class="skill-icon">{{ skill.icon }}</span>
-            <span class="skill-name">{{ skill.name }}</span>
-            <span class="skill-level">Lv.{{ getSkillLevel(skill.id) }}</span>
-          </div>
-          
-          <div class="skill-desc">{{ skill.description }}</div>
-          
-          <div class="skill-stats">
-            <span>关联属性: {{ getAttrName(skill.relatedAttr) }}</span>
-            <span>检定骰池: {{ getSkillDicePool(skill.id) }} 枚D10</span>
-          </div>
-          
-          <div class="skill-actions">
-            <button 
-              class="upgrade-btn"
-              :disabled="!canUpgrade(skill.id)"
-              @click="handleUpgrade(skill.id)"
-            >
-              升级 (⚡{{ getUpgradeCost(skill.id) }})
-            </button>
-          </div>
+    <div class="skill-list">
+      <div
+        v-for="skill in allSkills"
+        :key="skill.id"
+        class="skill-card"
+      >
+        <div class="skill-header">
+          <span class="skill-icon">{{ skill.icon }}</span>
+          <span class="skill-name">{{ skill.name }}</span>
+          <span class="skill-level">Lv.{{ getSkillLevel(skill.id) }}</span>
+        </div>
+
+        <div class="skill-desc">{{ skill.description }}</div>
+
+        <div class="skill-stats">
+          <span>关联属性: {{ getAttrName(skill.relatedAttr) }}</span>
+          <span>检定骰池: {{ getSkillDicePool(skill.id) }} 枚D10</span>
+          <span v-if="getSkillLevel(skill.id) > 0">附加成功: +{{ getSkillLevelBonus(getSkillLevel(skill.id)) }}</span>
+        </div>
+
+        <div class="skill-actions">
+          <button
+            class="upgrade-btn"
+            :disabled="!canUpgrade(skill.id)"
+            @click="handleUpgrade(skill.id)"
+          >
+            升级 (⚡{{ getUpgradeCost(skill.id) }})
+          </button>
         </div>
       </div>
     </div>
@@ -53,27 +54,28 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useGameStore } from '../../stores/game'
-import { skills, getSkillsByCategory, getSkillUpgradeCost, type SkillCategory } from '../../data/skills'
-import { getSkillLevelBonus } from '../../data/skills'
+import { skills, getSkillUpgradeCost, getSkillLevelBonus } from '../../data/skills'
 
 const store = useGameStore()
 
-const categories = [
-  { id: 'physical' as SkillCategory, name: '物理技能', icon: '⚔️' },
-  { id: 'mental' as SkillCategory, name: '精神技能', icon: '🧠' },
-  { id: 'social' as SkillCategory, name: '社交技能', icon: '🗣️' },
-]
+const allSkills = computed(() => skills)
 
-const totalSkillPoints = computed(() => {
-  return Object.values(store.playerSkills).reduce((sum, level) => sum + level, 0)
+const totalSkillLevels = computed(() => {
+  const playerSkills = store.playerSkills
+  return Object.values(playerSkills).reduce((sum, level) => sum + level, 0)
 })
 
 function getSkillLevel(skillId: string): number {
-  return store.getSkillLevel(skillId)
+  return store.playerSkills[skillId] ?? 0
 }
 
 function getSkillDicePool(skillId: string): number {
-  return store.getSkillDicePool(skillId)
+  const skill = skills.find(s => s.id === skillId)
+  if (!skill) return 1
+  const attrValue = store.attributes[skill.relatedAttr as keyof typeof store.attributes] ?? 1
+  const skillLevel = getSkillLevel(skillId)
+  // 每5点属性 = 1枚骰子，保底1枚
+  return Math.max(Math.floor(attrValue / 5), 1) + skillLevel
 }
 
 function getUpgradeCost(skillId: string): number {
@@ -92,12 +94,15 @@ function handleUpgrade(skillId: string) {
 
 function getAttrName(attr: string): string {
   const names: Record<string, string> = {
-    strength: '肌肉强度',
-    reaction: '神经反应',
+    strength: '力量',
+    agility: '敏捷',
+    endurance: '耐力',
     intelligence: '智力',
-    vitality: '细胞活力',
-    spirit: '精神力',
-    immunity: '免疫强度',
+    perception: '感知',
+    resolve: '决心',
+    presence: '风度',
+    manipulation: '操控',
+    composure: '沉着',
   }
   return names[attr] || attr
 }
@@ -126,8 +131,8 @@ function getAttrName(attr: string): string {
 }
 
 .stat-item {
-  background: rgba(255,215,0,0.1);
-  border: 1px solid rgba(255,215,0,0.3);
+  background: rgba(255, 215, 0, 0.1);
+  border: 1px solid rgba(255, 215, 0, 0.3);
   border-radius: 8px;
   padding: 12px 24px;
   text-align: center;
@@ -146,19 +151,6 @@ function getAttrName(attr: string): string {
   color: #ffd700;
 }
 
-.skill-category {
-  margin-bottom: 30px;
-}
-
-.category-title {
-  font-size: 18px;
-  font-weight: bold;
-  color: #e0e0e0;
-  margin-bottom: 15px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
-}
-
 .skill-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -166,8 +158,8 @@ function getAttrName(attr: string): string {
 }
 
 .skill-card {
-  background: rgba(30,30,40,0.8);
-  border: 1px solid rgba(255,215,0,0.2);
+  background: rgba(30, 30, 40, 0.8);
+  border: 1px solid rgba(255, 215, 0, 0.2);
   border-radius: 8px;
   padding: 15px;
 }
@@ -207,6 +199,7 @@ function getAttrName(attr: string): string {
   font-size: 12px;
   color: #888;
   margin-bottom: 12px;
+  flex-wrap: wrap;
 }
 
 .skill-actions {
@@ -215,8 +208,8 @@ function getAttrName(attr: string): string {
 }
 
 .upgrade-btn {
-  background: linear-gradient(135deg, rgba(0,255,136,0.2), rgba(0,200,100,0.2));
-  border: 1px solid rgba(0,255,136,0.4);
+  background: linear-gradient(135deg, rgba(0, 255, 136, 0.2), rgba(0, 200, 100, 0.2));
+  border: 1px solid rgba(0, 255, 136, 0.4);
   color: #00ff88;
   padding: 8px 16px;
   border-radius: 6px;
@@ -226,7 +219,7 @@ function getAttrName(attr: string): string {
 }
 
 .upgrade-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, rgba(0,255,136,0.3), rgba(0,200,100,0.3));
+  background: linear-gradient(135deg, rgba(0, 255, 136, 0.3), rgba(0, 200, 100, 0.3));
 }
 
 .upgrade-btn:disabled {

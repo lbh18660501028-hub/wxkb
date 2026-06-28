@@ -183,7 +183,7 @@ function getSuccessProbability(dp: number, targetSuccesses: number): number {
  * @returns 各等级敌人的命中率
  */
 export function calculateHitRatesByEnemyTier(
-  playerAttrs: { reaction: number },
+  playerAttrs: { agility: number },
   playerSkills: { ranged: number; dodge: number },
   critBuff: number = 0,
   dodgeBuff: number = 0
@@ -206,8 +206,8 @@ export function calculateHitRatesByEnemyTier(
   const enemyAttackMid = 3    // C级
   const enemyAttackHigh = 6   // B级
   
-  const playerAttackDP = playerAttrs.reaction + playerSkills.ranged
-  const playerDodgeDP = playerAttrs.reaction + playerSkills.dodge
+  const playerAttackDP = playerAttrs.agility + playerSkills.ranged
+  const playerDodgeDP = playerAttrs.agility + playerSkills.dodge
   
   return {
     hitRateLow: calculateHitRate(playerAttackDP, enemyDefenseLow),

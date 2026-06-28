@@ -1,11 +1,24 @@
+import type { ActiveStatusEffect } from '../data/statusEffects'
+
+/**
+ * 九属性系统
+ * - physical: strength, agility, endurance
+ * - mental: intelligence, perception, resolve
+ * - social: presence, manipulation, composure
+ */
 export interface Attributes {
-  intelligence: number
-  spirit: number
-  vitality: number
-  reaction: number
-  strength: number
-  immunity: number
+  strength: number       // 力量
+  agility: number        // 敏捷
+  endurance: number      // 耐力
+  intelligence: number   // 智力
+  perception: number     // 感知
+  resolve: number        // 决心
+  presence: number       // 风度
+  manipulation: number   // 操控
+  composure: number      // 沉着
 }
+
+export type AttributeKey = keyof Attributes
 
 export interface DerivedAttributes {
   hpMax: number
@@ -38,6 +51,25 @@ export interface IdleState {
   offline: OfflineIdle
 }
 
+export interface FacilityPlacement {
+  id: string
+  type: string
+  x: number
+  y: number
+  level: number
+  skin?: string
+}
+
+export interface PersonalSpaceState {
+  roomType: 'indoor' | 'outdoor'
+  roomStyle: string
+  currentEnvironment: string
+  facilityPlacements: FacilityPlacement[]
+  storage: Record<string, number>
+  trainingAssignments: Record<string, AttributeKey | null>
+  trainingProgress: Record<string, Partial<Record<AttributeKey, number>>>
+}
+
 export interface MapProgress {
   unlockedMaps: number[]
   completedScenarios: number[]
@@ -63,7 +95,7 @@ export interface LogEntry {
 }
 
 export type PageId =
-  | 'home' | 'cycle' | 'personal' | 'scenario' | 'dungeon' | 'guide' | 'settings'
+  | 'home' | 'cycle' | 'personal' | 'dungeonGrid' | 'guide' | 'settings'
   | 'shop' | 'exchange' | 'equipment' | 'geneLock' | 'squad' | 'bloodline'
   | 'cybernetic' | 'cultivation' | 'eyeTech' | 'energy' | 'title' | 'multiverse'
 
@@ -88,6 +120,44 @@ export interface ShopItem {
   price: number
 }
 
+/**
+ * 基因锁状态（每个角色独立）
+ */
+export interface CharacterGeneLock {
+  tier: number
+  proficiency: number[]
+  active: boolean
+  activeTier: number
+}
+
+/**
+ * 统一角色接口 — 取消玩家/队友区分
+ *
+ * 所有角色（包括主角）使用同一数据结构。
+ * 角色通过 characters 数组管理，index 0 为主角。
+ *
+ * 扩展方法：添加新字段时需在 createDefaultCharacter() 中提供默认值，
+ * 并在 loadSave() 迁移逻辑中处理旧存档兼容。
+ */
+export interface Character {
+  id: string
+  name: string
+  professionId: string
+  gender: string
+  attributes: Attributes
+  equippedItems: Record<string, string>
+  geneLock: CharacterGeneLock
+  equippedBloodline: string | null
+  skills: Record<string, number>
+  spells: Record<string, boolean>
+  currentMp: number
+  volumeLevel: number
+  statusEffects: ActiveStatusEffect[]
+}
+
+/**
+ * @deprecated 使用 Character 代替
+ */
 export interface Companion {
   id: string
   name: string

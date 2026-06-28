@@ -12,6 +12,7 @@
 import { ref, computed } from 'vue'
 import { useGameStore } from '../../stores/game'
 import { bloodlines, getBloodlineById, type BloodlineConfig, type BloodlineCategory } from '../../data/bloodline'
+import { ATTRIBUTE_LABELS, type AttributeId } from '../../config/combat'
 
 const store = useGameStore()
 
@@ -58,12 +59,10 @@ function doUnequip() {
 // 格式化属性显示
 function formatStats(stats: BloodlineConfig['stats']): string {
   const parts: string[] = []
-  if (stats.strength) parts.push(`肌肉+${stats.strength}`)
-  if (stats.reaction) parts.push(`反应+${stats.reaction}`)
-  if (stats.intelligence) parts.push(`智力+${stats.intelligence}`)
-  if (stats.vitality) parts.push(`活力+${stats.vitality}`)
-  if (stats.spirit) parts.push(`精神+${stats.spirit}`)
-  if (stats.immunity) parts.push(`免疫+${stats.immunity}`)
+  for (const key of Object.keys(stats) as AttributeId[]) {
+    const val = stats[key]
+    if (val) parts.push(`${ATTRIBUTE_LABELS[key]}+${val}`)
+  }
   return parts.join(' ')
 }
 </script>

@@ -2,6 +2,8 @@
  * 角色创建系统 - 职业、缺陷、天赋定义
  */
 
+import type { AttributeId } from '../config/combat'
+
 // ==================== 类型定义 ====================
 
 export interface Profession {
@@ -11,14 +13,11 @@ export interface Profession {
   description: string
   icon: string
   position: string       // 定位
-  attributeBonus: {
-    strength?: number
-    vitality?: number
-    intelligence?: number
-    spirit?: number
-    reaction?: number
-    immunity?: number
-  }
+  startingSkill: string  // 初始技能ID（角色创建时获得Lv.1）
+  /** 主属性 */
+  mainAttribute: AttributeId
+  /** 副属性 */
+  secondaryAttribute: AttributeId
   weaponPassive: {
     name: string         // 武器被动名称
     description: string  // 武器被动描述
@@ -57,7 +56,9 @@ export const PROFESSIONS: Profession[] = [
     description: '中洲队领袖，近战爆发型输出。极度重视队友，在生死边缘不断突破。',
     icon: '👊',
     position: '近战输出',
-    attributeBonus: { strength: 3, vitality: 2 },
+    startingSkill: 'persuasion',
+    mainAttribute: 'strength',
+    secondaryAttribute: 'endurance',
     weaponPassive: { name: '刀剑精通', description: '刀剑伤害+15%' },
   },
   {
@@ -67,7 +68,9 @@ export const PROFESSIONS: Profession[] = [
     description: '中洲队引导者，精神力控制者。性格豪爽不羁，为团队牺牲自我。',
     icon: '🚬',
     position: '团队辅助',
-    attributeBonus: { immunity: 3, strength: 2 },
+    startingSkill: 'empathy',
+    mainAttribute: 'composure',
+    secondaryAttribute: 'strength',
     weaponPassive: { name: '枪械精通', description: '枪械伤害+15%' },
   },
   {
@@ -77,7 +80,9 @@ export const PROFESSIONS: Profession[] = [
     description: '中洲队首席智者，智商220。以团队存活、利益最大化为目标。',
     icon: '🎖️',
     position: '科技输出',
-    attributeBonus: { intelligence: 3, spirit: 2 },
+    startingSkill: 'lore',
+    mainAttribute: 'intelligence',
+    secondaryAttribute: 'composure',
     weaponPassive: { name: '科技武器', description: '科技伤害+15%' },
   },
   {
@@ -87,7 +92,9 @@ export const PROFESSIONS: Profession[] = [
     description: '中洲队第二智者，凡人智慧的顶点。能洞察即将死亡之人。',
     icon: '🔮',
     position: '暴击控制',
-    attributeBonus: { reaction: 3, intelligence: 2 },
+    startingSkill: 'occult',
+    mainAttribute: 'perception',
+    secondaryAttribute: 'intelligence',
     weaponPassive: { name: '魔幻精通', description: '魔法伤害+10%' },
   },
   {
@@ -97,7 +104,9 @@ export const PROFESSIONS: Profession[] = [
     description: '亚洲刺客世家成员，首个解开基因锁的人。拥有正副两种人格。',
     icon: '🗡️',
     position: '刺客爆发',
-    attributeBonus: { reaction: 3, strength: 2 },
+    startingSkill: 'athletics',
+    mainAttribute: 'agility',
+    secondaryAttribute: 'strength',
     weaponPassive: { name: '匕首精通', description: '匕首伤害+15%' },
   },
   {
@@ -107,7 +116,9 @@ export const PROFESSIONS: Profession[] = [
     description: '中洲队精神力控制者，网络小说作家。为团队创造涅槃重生的条件。',
     icon: '📝',
     position: '精神控制',
-    attributeBonus: { spirit: 3, intelligence: 2 },
+    startingSkill: 'empathy',
+    mainAttribute: 'resolve',
+    secondaryAttribute: 'intelligence',
     weaponPassive: { name: '魔幻精通', description: '魔法伤害+10%' },
   },
   {
@@ -117,7 +128,9 @@ export const PROFESSIONS: Profession[] = [
     description: '国际顶级杀手，中洲队狙击手。惜字如金，但极可靠。',
     icon: '🎯',
     position: '狙击远程',
-    attributeBonus: { reaction: 3, spirit: 2 },
+    startingSkill: 'investigation',
+    mainAttribute: 'perception',
+    secondaryAttribute: 'agility',
     weaponPassive: { name: '步枪精通', description: '步枪伤害+15%' },
   },
   {
@@ -127,7 +140,9 @@ export const PROFESSIONS: Profession[] = [
     description: '从小有射箭天赋，因懦弱曾抛弃爱人。进入轮回世界后不断赎罪。',
     icon: '🏹',
     position: '弓箭输出',
-    attributeBonus: { reaction: 3, strength: 2 },
+    startingSkill: 'athletics',
+    mainAttribute: 'agility',
+    secondaryAttribute: 'perception',
     weaponPassive: { name: '弓弩精通', description: '弓弩伤害+15%' },
   },
   {
@@ -137,7 +152,9 @@ export const PROFESSIONS: Profession[] = [
     description: '特种部队军医，家传武术与炼蛊技术。天生拥有内力者。',
     icon: '🏥',
     position: '治疗续航',
-    attributeBonus: { intelligence: 3, vitality: 2 },
+    startingSkill: 'medicine',
+    mainAttribute: 'intelligence',
+    secondaryAttribute: 'endurance',
     weaponPassive: { name: '魔幻精通', description: '魔法伤害+10%' },
   },
   {
@@ -147,7 +164,9 @@ export const PROFESSIONS: Profession[] = [
     description: '国际顶级雇佣兵，因战友全部阵亡而心灰意冷。',
     icon: '💥',
     position: '火力压制',
-    attributeBonus: { strength: 3, vitality: 2 },
+    startingSkill: 'athletics',
+    mainAttribute: 'strength',
+    secondaryAttribute: 'endurance',
     weaponPassive: { name: '炮精通', description: '炮伤害+20%' },
   },
   {
@@ -157,7 +176,9 @@ export const PROFESSIONS: Profession[] = [
     description: '特种部队成员，代号"贪狼"。擅长侦查、反侦查、地雷与陷阱。',
     icon: '🐺',
     position: '侦查陷阱',
-    attributeBonus: { reaction: 3, intelligence: 2 },
+    startingSkill: 'investigation',
+    mainAttribute: 'perception',
+    secondaryAttribute: 'intelligence',
     weaponPassive: { name: '科技武器', description: '科技伤害+15%' },
   },
   {
@@ -167,7 +188,9 @@ export const PROFESSIONS: Profession[] = [
     description: '考古学者，精通古代文字。对语言有种天赋，拥有高于常人的计算能力。',
     icon: '📚',
     position: '魔法辅助',
-    attributeBonus: { intelligence: 3, spirit: 2 },
+    startingSkill: 'lore',
+    mainAttribute: 'intelligence',
+    secondaryAttribute: 'resolve',
     weaponPassive: { name: '魔幻精通', description: '魔法伤害+10%' },
   },
   {
@@ -177,7 +200,9 @@ export const PROFESSIONS: Profession[] = [
     description: '复合弓射击亚军之女，与张恒青梅竹马。公司公关部经理。',
     icon: '🐎',
     position: '弓箭穿透',
-    attributeBonus: { reaction: 3, strength: 2 },
+    startingSkill: 'persuasion',
+    mainAttribute: 'agility',
+    secondaryAttribute: 'perception',
     weaponPassive: { name: '弓弩精通', description: '弓弩伤害+15%' },
   },
 ]

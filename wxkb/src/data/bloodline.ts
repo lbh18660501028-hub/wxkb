@@ -26,6 +26,8 @@
  * 6. 设置 traits（特性列表）
  */
 
+import type { AttributeId } from '../config/combat'
+
 /**
  * 血统分类
  */
@@ -56,15 +58,8 @@ export interface BloodlineConfig {
   category: BloodlineCategory   // 血统分类
   tier: string                  // 血统等级（D/DD/C/CC/B/BB/A/AA/S）
   
-  // 属性加成
-  stats: {
-    strength: number    // 肌肉强度
-    reaction: number    // 神经反应
-    intelligence: number // 智力
-    vitality: number    // 细胞活力
-    spirit: number      // 精神力
-    immunity: number    // 免疫强度
-  }
+  // 属性加成（九属性）
+  stats: Partial<Record<AttributeId, number>>
   
   // 特性列表
   traits: BloodlineTrait[]
@@ -109,7 +104,7 @@ const liangyiBloodlines: BloodlineConfig[] = [
     name: '两仪家血脉',
     category: 'human',
     tier: 'D',
-    stats: { strength: 0, reaction: 1, intelligence: 1, vitality: 0, spirit: 1, immunity: 1 },
+    stats: { strength: 0, agility: 1, intelligence: 1, resolve: 1, composure: 1 },
     traits: [
       {
         name: '双重人格',
@@ -128,7 +123,7 @@ const liangyiBloodlines: BloodlineConfig[] = [
     name: '两仪家血脉',
     category: 'human',
     tier: 'C',
-    stats: { strength: 0, reaction: 2, intelligence: 2, vitality: 0, spirit: 1, immunity: 1 },
+    stats: { strength: 0, agility: 2, intelligence: 2, endurance: 1, resolve: 1, composure: 1 },
     traits: [
       {
         name: '双重人格强化',
@@ -147,7 +142,7 @@ const liangyiBloodlines: BloodlineConfig[] = [
     name: '两仪家血脉',
     category: 'human',
     tier: 'B',
-    stats: { strength: 0, reaction: 3, intelligence: 3, vitality: 1, spirit: 2, immunity: 2 },
+    stats: { strength: 0, agility: 3, intelligence: 3, endurance: 1, resolve: 2, composure: 2 },
     traits: [
       {
         name: '双重人格进化',
@@ -166,7 +161,7 @@ const liangyiBloodlines: BloodlineConfig[] = [
     name: '两仪家血脉',
     category: 'human',
     tier: 'A',
-    stats: { strength: 0, reaction: 3, intelligence: 3, vitality: 3, spirit: 3, immunity: 3 },
+    stats: { strength: 1, agility: 3, intelligence: 3, endurance: 3, resolve: 3, composure: 3 },
     traits: [
       {
         name: '双重人格融合',
@@ -185,7 +180,7 @@ const liangyiBloodlines: BloodlineConfig[] = [
     name: '两仪家血脉',
     category: 'human',
     tier: 'S',
-    stats: { strength: 3, reaction: 3, intelligence: 3, vitality: 3, spirit: 3, immunity: 3 },
+    stats: { strength: 3, agility: 3, intelligence: 3, endurance: 3, resolve: 3, composure: 3 },
     traits: [
       {
         name: '两仪终极',
@@ -210,7 +205,7 @@ const vampireBloodlines: BloodlineConfig[] = [
     name: '吸血鬼血脉',
     category: 'dark',
     tier: 'D',
-    stats: { strength: 1, reaction: 1, intelligence: 0, vitality: 0, spirit: 0, immunity: 1 },
+    stats: { strength: 1, agility: 1, composure: 1 },
     traits: [
       {
         name: '吸血本能',
@@ -227,7 +222,7 @@ const vampireBloodlines: BloodlineConfig[] = [
     name: '吸血鬼血脉',
     category: 'dark',
     tier: 'C',
-    stats: { strength: 2, reaction: 2, intelligence: 0, vitality: 1, spirit: 0, immunity: 1 },
+    stats: { strength: 2, agility: 2, endurance: 1, composure: 1 },
     traits: [
       {
         name: '吸血强化',
@@ -244,7 +239,7 @@ const vampireBloodlines: BloodlineConfig[] = [
     name: '吸血鬼血脉',
     category: 'dark',
     tier: 'B',
-    stats: { strength: 3, reaction: 3, intelligence: 1, vitality: 2, spirit: 0, immunity: 2 },
+    stats: { strength: 3, agility: 3, intelligence: 1, endurance: 2, composure: 2 },
     traits: [
       {
         name: '吸血鬼之触',
@@ -269,7 +264,7 @@ const angelBloodlines: BloodlineConfig[] = [
     name: '天使血脉',
     category: 'light',
     tier: 'D',
-    stats: { strength: 0, reaction: 0, intelligence: 1, vitality: 1, spirit: 1, immunity: 1 },
+    stats: { intelligence: 1, endurance: 1, resolve: 1, composure: 1 },
     traits: [
       {
         name: '神圣护盾',
@@ -286,7 +281,7 @@ const angelBloodlines: BloodlineConfig[] = [
     name: '天使血脉',
     category: 'light',
     tier: 'C',
-    stats: { strength: 0, reaction: 1, intelligence: 2, vitality: 2, spirit: 2, immunity: 1 },
+    stats: { agility: 1, intelligence: 2, endurance: 2, resolve: 2, composure: 1 },
     traits: [
       {
         name: '神圣治愈',
@@ -311,7 +306,7 @@ const werewolfBloodlines: BloodlineConfig[] = [
     name: '狼人血脉',
     category: 'nonhuman',
     tier: 'D',
-    stats: { strength: 2, reaction: 1, intelligence: 0, vitality: 1, spirit: 0, immunity: 0 },
+    stats: { strength: 2, agility: 1, endurance: 1 },
     traits: [
       {
         name: '野性本能',
@@ -328,7 +323,7 @@ const werewolfBloodlines: BloodlineConfig[] = [
     name: '狼人血脉',
     category: 'nonhuman',
     tier: 'C',
-    stats: { strength: 3, reaction: 2, intelligence: 0, vitality: 2, spirit: 0, immunity: 1 },
+    stats: { strength: 3, agility: 2, endurance: 2, composure: 1 },
     traits: [
       {
         name: '狼人变身',

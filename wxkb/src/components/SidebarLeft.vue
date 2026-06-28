@@ -1,8 +1,12 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useGameStore } from '../stores/game'
+import SquadStatus from './SquadStatus.vue'
 
 const store = useGameStore()
+
+type AttrKey = 'strength' | 'agility' | 'endurance' | 'intelligence' | 'perception' | 'resolve' | 'presence' | 'manipulation' | 'composure'
+type TooltipType = 'basic' | 'special' | 'advanced'
 
 interface AttrTooltip {
   icon: string
@@ -15,8 +19,6 @@ interface AttrTooltip {
   effect: string
 }
 
-type AttrKey = 'intelligence' | 'spirit' | 'vitality' | 'reaction' | 'strength' | 'immunity'
-
 interface BasicAttr {
   icon: string
   color: string
@@ -24,53 +26,60 @@ interface BasicAttr {
   key: AttrKey
   desc: string
   base: number
-  bonus: number
+  effect: string
+}
+
+interface SpecialAttr {
+  icon: string
+  color: string
+  label: string
+  key: 'hpMax' | 'willpower' | 'speed' | 'volume'
+  desc: string
+  base: number
+  effect: string
+}
+
+interface AdvancedAttr {
+  icon: string
+  color: string
+  label: string
+  value: number | string
+  desc: string
   effect: string
 }
 
 const basicAttrs: BasicAttr[] = [
-  { icon: '🧠', color: '#b026ff', label: 'INTELLIGENCE', key: 'intelligence',
-    desc: 'Affects skill damage, crit chance and XP gain',
-    base: 1, bonus: 0, effect: '+1% Crit per point, boosts spell attack' },
-  { icon: '◈', color: '#00f0ff', label: 'SPIRIT', key: 'spirit',
-    desc: 'Affects fantasy essence attack and willpower',
-    base: 1, bonus: 0, effect: '+2 Fantasy ATK, +1 Fantasy DEF, +1 Willpower' },
-  { icon: '❤', color: '#ff0033', label: 'VITALITY', key: 'vitality',
-    desc: 'Affects max HP and regeneration rate',
-    base: 1, bonus: 0, effect: 'HP = Vitality × 10, +5% Regen' },
-  { icon: '⚡', color: '#ffb000', label: 'REACTION', key: 'reaction',
-    desc: 'Affects speed, accuracy and evasion',
-    base: 1, bonus: 0, effect: '+1 Speed, +1% Hit/Evasion, +1 Tech DEF' },
-  { icon: '⬆', color: '#ff6b35', label: 'STRENGTH', key: 'strength',
-    desc: 'Affects technology essence attack',
-    base: 1, bonus: 0, effect: '+2 Technology ATK per point' },
-  { icon: '🛡', color: '#39ff14', label: 'IMMUNITY', key: 'immunity',
-    desc: 'Affects status resistance and damage reduction',
-    base: 1, bonus: 0, effect: '+1% Anti-Crit/Daze/Reduction/Status' },
+  // 身体属性
+  { icon: '💪', color: '#ff6b35', label: '力量', key: 'strength', desc: '影响科技本质攻击力。', base: 1, effect: '提高近战与科技向输出。' },
+  { icon: '⚡', color: '#ffb000', label: '敏捷', key: 'agility', desc: '影响速度、命中与闪避。', base: 1, effect: '更快行动，并提高命中/闪避。' },
+  { icon: '❤', color: '#ff0033', label: '耐力', key: 'endurance', desc: '决定生命上限与续航能力。', base: 1, effect: '生命越高，生存能力越强。' },
+  // 心智属性
+  { icon: '🧠', color: '#b026ff', label: '智力', key: 'intelligence', desc: '影响MP上限与法术成长。', base: 1, effect: '提升法术伤害与MP上限。' },
+  { icon: '👁', color: '#00c8ff', label: '感知', key: 'perception', desc: '影响暴击率与察觉能力。', base: 1, effect: '提高暴击触发概率。' },
+  { icon: '◈', color: '#00f0ff', label: '决心', key: 'resolve', desc: '影响魔幻伤害与意志力。', base: 1, effect: '提高魔幻攻击与意志力。' },
+  // 社交属性
+  { icon: '✦', color: '#ffd700', label: '风度', key: 'presence', desc: '影响社交压迫与特异伤害。', base: 1, effect: '提升特异本质攻击力。' },
+  { icon: '🎭', color: '#ff3366', label: '操控', key: 'manipulation', desc: '影响交际与特异伤害。', base: 1, effect: '提升特异本质攻击力。' },
+  { icon: '🛡', color: '#39ff14', label: '沉着', key: 'composure', desc: '影响抗性、减伤与意志力。', base: 1, effect: '更稳地承受控制与持续伤害。' },
 ]
 
-const specialAttrs = [
-  { icon: '❤', color: '#ff0033', label: 'MAX HP', key: 'hpMax',
-    desc: 'Maximum HP. Death occurs at zero.',
-    base: 10, effect: 'Battle fails when HP reaches zero' },
-  { icon: '◈', color: '#00f0ff', label: 'WILLPOWER', key: 'willpower',
-    desc: 'Resource for willpower-based skills',
-    base: 2, effect: 'Used for Gene Lock and special skills' },
-  { icon: '⚡', color: '#ffb000', label: 'SPEED', key: 'speed',
-    desc: 'Determines action bar growth in combat',
-    base: 7, effect: 'Higher speed = faster actions' },
-  { icon: '⚖', color: '#8a99aa', label: 'VOLUME', key: 'volume',
-    desc: 'Affects HP, speed and evasion',
-    base: 5, effect: 'Smaller volume = higher evasion' },
+const specialAttrs: SpecialAttr[] = [
+  { icon: '❤', color: '#ff0033', label: '生命上限', key: 'hpMax', desc: '角色当前最大生命值（100 + 耐力×10）。', base: 110, effect: '生命归零时战斗失败。' },
+  { icon: '◈', color: '#00f0ff', label: '意志上限', key: 'willpower', desc: '决心+沉着，用于基因锁等特殊判定。', base: 2, effect: '用于副本重试、主动爆发和特殊判定。' },
+  { icon: '⚡', color: '#ffb000', label: '基础速度', key: 'speed', desc: '敏捷+沉着，决定行动节奏与先后。', base: 2, effect: '速度越高，出手越快。' },
+  { icon: '⬒', color: '#8a99aa', label: '体型', key: 'volume', desc: '影响承伤与部分闪避表现。', base: 5, effect: '体型越小，通常越灵活。' },
 ]
 
-function getSpecialValue(key: string): number | string {
-  switch(key) {
-    case 'hpMax': return store.getMaxHp()
-    case 'willpower': return store.getMaxWillpower()
-    case 'speed': return store.getSpeed()
-    case 'volume': return 5
-    default: return 0
+function getSpecialValue(key: SpecialAttr['key']): number {
+  switch (key) {
+    case 'hpMax':
+      return store.getMaxHp()
+    case 'willpower':
+      return store.getMaxWillpower()
+    case 'speed':
+      return store.getSpeed()
+    case 'volume':
+      return 5
   }
 }
 
@@ -78,84 +87,114 @@ function fmtPct(value: number): string {
   return `${Math.round(value * 100)}%`
 }
 
-const advancedAttrs = computed(() => {
+const advancedAttrs = computed<AdvancedAttr[]>(() => {
   const s = store.getAdvancedCombatStats()
   return [
-    { icon: '⚙', color: '#ffb000', label: 'TECH ATK', value: s.technologyAttack || 0, desc: 'Base damage for technology essence attacks', effect: 'Affected by Strength, weapon, melee/firearm skills' },
-    { icon: '▣', color: '#39ff14', label: 'TECH DEF', value: s.technologyDefense || 0, desc: 'Defense that reduces technology damage', effect: 'Affected by Reaction, Immunity, armor' },
-    { icon: '✦', color: '#00f0ff', label: 'FANTASY ATK', value: s.fantasyAttack || 0, desc: 'Base damage for fantasy essence attacks', effect: 'Affected by Spirit, Intelligence, spell skills' },
-    { icon: '◇', color: '#b026ff', label: 'FANTASY DEF', value: s.fantasyDefense || 0, desc: 'Defense that reduces fantasy damage', effect: 'Affected by Spirit, Immunity, magic resist gear' },
-    { icon: '◈', color: '#b026ff', label: 'ABNORMAL ATK', value: s.abnormalAttack || 0, desc: 'Base damage for abnormal essence attacks', effect: 'Affected by Spirit, Intelligence, abnormal gear' },
-    { icon: '◈', color: '#b026ff', label: 'ABNORMAL DEF', value: s.abnormalDefense || 0, desc: 'Defense that reduces abnormal damage', effect: 'Affected by Intelligence, Spirit, Immunity' },
-    { icon: '◆', color: '#ffb000', label: 'CRIT RATE', value: fmtPct(s.critRate), desc: 'Chance to deal critical damage on hit', effect: 'Reduced by target Crit Resist' },
-    { icon: '✸', color: '#ff0033', label: 'CRIT DMG', value: fmtPct(s.critDamage), desc: 'Damage multiplier when crit triggers', effect: 'Reduced by target Toughness' },
-    { icon: '◎', color: '#39ff14', label: 'ACCURACY', value: fmtPct(s.hit), desc: 'Base probability that attacks will hit', effect: 'Final hit rate = Accuracy - Target Evasion' },
-    { icon: '◌', color: '#00f0ff', label: 'EVASION', value: fmtPct(s.evasion), desc: 'Reduces enemy hit chance against you', effect: 'Affected by Reaction, evasion skills, Gene Lock, Volume' },
-    { icon: '↩', color: '#b026ff', label: 'COUNTER', value: fmtPct(s.counterRate), desc: 'Chance to counter-attack when hit', effect: 'Counter deals reduced damage' },
-    { icon: '↯', color: '#ff0033', label: 'REFLECT', value: fmtPct(s.reflectRate), desc: 'Reflects portion of damage to attacker', effect: 'Still take full damage before reflect' },
-    { icon: '⇄', color: '#ffb000', label: 'COMBO', value: fmtPct(s.comboRate), desc: 'Chance for bonus half-damage attack', effect: 'Good for high accuracy or high attack builds' },
-    { icon: '▤', color: '#39ff14', label: 'CRIT RES', value: fmtPct(s.critResist), desc: 'Reduces enemy crit chance against you', effect: 'Mainly from Immunity and equipment' },
-    { icon: '▰', color: '#39ff14', label: 'SHIELD', value: s.shield, desc: 'Temporary HP that absorbs damage first', effect: 'Shield takes damage before HP' },
-    { icon: '▱', color: '#39ff14', label: 'SHIELD REG', value: s.shieldRegen, desc: 'Shield recovered per turn', effect: 'Added to shield pool each turn' },
-    { icon: '✦', color: '#ff0033', label: 'STUN', value: fmtPct(s.stunRate), desc: 'Chance to stun target on hit', effect: 'Reduced by target Stun Resist' },
-    { icon: '◇', color: '#39ff14', label: 'STUN RES', value: fmtPct(s.stunResist), desc: 'Reduces chance of being stunned', effect: 'Mainly from Immunity and equipment' },
-    { icon: '❤', color: '#ff0033', label: 'LIFESTEAL', value: fmtPct(s.lifeSteal), desc: 'HP recovered based on damage dealt', effect: 'No recovery if no damage dealt' },
-    { icon: '⬇', color: '#39ff14', label: 'DAMAGE RED', value: fmtPct(s.damageReduction), desc: 'Reduces final normal damage taken', effect: 'True damage ignores normal reduction' },
-    { icon: '⌖', color: '#ffb000', label: 'PENETRATE', value: s.penetration, desc: 'Ignores fixed defense when attacking', effect: 'Applied before armor break percentage' },
-    { icon: '✂', color: '#ff0033', label: 'ARMOR BREAK', value: fmtPct(s.armorBreak), desc: 'Reduces target defense by percentage', effect: 'More effective against high defense' },
-    { icon: '▣', color: '#00f0ff', label: 'BLOCK', value: fmtPct(s.blockRate), desc: 'Chance to reduce damage when hit', effect: 'Reduces damage by ~35% when triggered' },
-    { icon: '⬢', color: '#8a99aa', label: 'TOUGHNESS', value: fmtPct(s.toughness), desc: 'Reduces crit damage and final damage', effect: 'Defensive stability attribute' },
-    { icon: '✹', color: '#ffb000', label: 'TRUE DMG', value: s.trueDamage, desc: 'Bonus true damage after reduction', effect: 'Only blocked by true defense' },
-    { icon: '✺', color: '#00f0ff', label: 'TRUE DEF', value: s.trueDefense, desc: 'Blocks enemy true damage', effect: 'Does not affect normal damage' },
+    { icon: '⚙', color: '#ffb000', label: '科技攻击', value: s.technologyAttack || 0, desc: '科技/物理本质输出基础值。', effect: '受力量、装备与部分技能影响。' },
+    { icon: '🧱', color: '#39ff14', label: '科技防御', value: s.technologyDefense || 0, desc: '抵消科技/物理本质伤害。', effect: '受敏捷、沉着与护甲影响。' },
+    { icon: '✦', color: '#00f0ff', label: '幻想攻击', value: s.fantasyAttack || 0, desc: '幻想本质输出基础值。', effect: '受决心、智力与技能影响。' },
+    { icon: '◉', color: '#b026ff', label: '幻想防御', value: s.fantasyDefense || 0, desc: '抵消幻想本质伤害。', effect: '受决心、沉着与相关装备影响。' },
+    { icon: '☍', color: '#b026ff', label: '异常攻击', value: s.abnormalAttack || 0, desc: '异常/特异本质输出基础值。', effect: '偏向特异装备与异常流玩法。' },
+    { icon: '⛨', color: '#b026ff', label: '异常防御', value: s.abnormalDefense || 0, desc: '抵消异常/特异本质伤害。', effect: '更稳定地对抗特殊敌人。' },
+    { icon: '✹', color: '#ffb000', label: '暴击', value: fmtPct(s.critRate), desc: '触发暴击的概率。', effect: '会被目标抗暴部分抵消。' },
+    { icon: '🩸', color: '#ff0033', label: '暴伤', value: fmtPct(s.critDamage), desc: '暴击后追加的伤害倍率。', effect: '高暴击流的核心收益。' },
+    { icon: '◎', color: '#39ff14', label: '命中', value: fmtPct(s.hit), desc: '命中目标的基础概率。', effect: '实际命中会与目标闪避对冲。' },
+    { icon: '🜁', color: '#00f0ff', label: '闪避', value: fmtPct(s.evasion), desc: '规避攻击的基础概率。', effect: '高敏捷角色收益更明显。' },
+    { icon: '↺', color: '#b026ff', label: '反击', value: fmtPct(s.counterRate), desc: '受击后立刻反打的概率。', effect: '适合站桩持续战。' },
+    { icon: '↯', color: '#ff0033', label: '反伤', value: fmtPct(s.reflectRate), desc: '把部分承受伤害返还给敌人。', effect: '自身仍会先承受本次伤害。' },
+    { icon: '⫸', color: '#ffb000', label: '连击', value: fmtPct(s.comboRate), desc: '命中后追加追击的概率。', effect: '命中越稳，收益越高。' },
+    { icon: '⛶', color: '#39ff14', label: '抗暴', value: fmtPct(s.critResist), desc: '降低敌人对你暴击的概率。', effect: '更稳地吃住爆发。' },
+    { icon: '⬒', color: '#39ff14', label: '护盾', value: s.shield, desc: '优先承受伤害的额外生命层。', effect: '在生命之前消耗。' },
+    { icon: '⬓', color: '#39ff14', label: '回盾', value: s.shieldRegen, desc: '每回合额外恢复的护盾值。', effect: '长期战价值更高。' },
+    { icon: '✺', color: '#ff0033', label: '眩晕', value: fmtPct(s.stunRate), desc: '使目标跳过行动的概率。', effect: '会被目标抗晕抵消。' },
+    { icon: '🛡', color: '#39ff14', label: '抗晕', value: fmtPct(s.stunResist), desc: '降低被眩晕的概率。', effect: '提高稳定性。' },
+    { icon: '🩹', color: '#ff0033', label: '吸血', value: fmtPct(s.lifeSteal), desc: '按造成伤害恢复生命。', effect: '没打出伤害就没有回复。' },
+    { icon: '🧷', color: '#39ff14', label: '减伤', value: fmtPct(s.damageReduction), desc: '按比例减少最终普通伤害。', effect: '真实伤害通常不吃普通减伤。' },
+    { icon: '⇢', color: '#ffb000', label: '穿透', value: s.penetration, desc: '无视目标固定防御。', effect: '对高防敌人很有价值。' },
+    { icon: '⟡', color: '#ff0033', label: '破甲', value: fmtPct(s.armorBreak), desc: '按比例削弱目标防御。', effect: '越打高甲目标越显著。' },
+    { icon: '▣', color: '#00f0ff', label: '格挡', value: fmtPct(s.blockRate), desc: '被命中时降低本次伤害的概率。', effect: '触发后本次伤害明显下降。' },
+    { icon: '⬣', color: '#8a99aa', label: '韧性', value: fmtPct(s.toughness), desc: '降低暴伤与部分最终伤害。', effect: '偏防御向的稳定属性。' },
+    { icon: '✶', color: '#ffb000', label: '真伤', value: s.trueDamage, desc: '结算后追加的真实伤害。', effect: '通常只受真实防御影响。' },
+    { icon: '✢', color: '#00f0ff', label: '真防', value: s.trueDefense, desc: '抵消敌人的真实伤害。', effect: '不影响普通物理/幻想伤害。' },
   ]
 })
 
+const mergedAttrs = computed(() => {
+  const special = specialAttrs.map(attr => ({
+    icon: attr.icon,
+    color: attr.color,
+    label: attr.label,
+    value: getSpecialValue(attr.key),
+    tooltipType: 'special' as const,
+    raw: attr,
+  }))
+
+  const advanced = advancedAttrs.value.map(attr => ({
+    icon: attr.icon,
+    color: attr.color,
+    label: attr.label,
+    value: attr.value,
+    tooltipType: 'advanced' as const,
+    raw: attr,
+  }))
+
+  return [...special, ...advanced]
+})
+
+const basicExpanded = ref(true)
+const advancedExpanded = ref(true)
 const hoverAttr = ref<AttrTooltip | null>(null)
 const tooltipPos = ref({ x: 0, y: 0 })
 
-function showTooltip(e: MouseEvent, attr: any, type: 'basic' | 'special' | 'advanced') {
+function toggleBasicSection() {
+  basicExpanded.value = !basicExpanded.value
+}
+
+function toggleAdvancedSection() {
+  advancedExpanded.value = !advancedExpanded.value
+}
+
+function showTooltip(e: MouseEvent, attr: BasicAttr | SpecialAttr | AdvancedAttr, type: TooltipType) {
   let tooltip: AttrTooltip
 
   if (type === 'basic') {
-    const key = attr.key as keyof typeof store.attributes
+    const basic = attr as BasicAttr
+    const key = basic.key as AttrKey
     const val = store.attributes[key]
     tooltip = {
-      icon: attr.icon,
-      color: attr.color,
-      label: attr.label,
+      icon: basic.icon,
+      color: basic.color,
+      label: basic.label,
       value: val,
-      desc: attr.desc,
-      base: attr.base,
-      bonus: val - attr.base,
-      effect: attr.effect,
+      desc: basic.desc,
+      base: basic.base,
+      bonus: val - basic.base,
+      effect: basic.effect,
     }
   } else if (type === 'special') {
-    const key = attr.key as string
-    let val: number | string = 0
-    if (key === 'hpMax') val = store.hpMax
-    else if (key === 'willpower') val = store.willpower
-    else if (key === 'speed') val = store.speed
-    else if (key === 'volume') val = 5
+    const special = attr as SpecialAttr
+    const val = getSpecialValue(special.key)
     tooltip = {
-      icon: attr.icon,
-      color: attr.color,
-      label: attr.label,
+      icon: special.icon,
+      color: special.color,
+      label: special.label,
       value: val,
-      desc: attr.desc,
-      base: attr.base,
-      bonus: (typeof val === 'number' ? val : 0) - attr.base,
-      effect: attr.effect,
+      desc: special.desc,
+      base: special.base,
+      bonus: val - special.base,
+      effect: special.effect,
     }
   } else {
+    const advanced = attr as AdvancedAttr
     tooltip = {
-      icon: attr.icon,
-      color: attr.color,
-      label: attr.label,
-      value: attr.value,
-      desc: attr.desc,
+      icon: advanced.icon,
+      color: advanced.color,
+      label: advanced.label,
+      value: advanced.value,
+      desc: advanced.desc,
       base: 0,
-      bonus: typeof attr.value === 'number' ? attr.value : 0,
-      effect: attr.effect,
+      bonus: typeof advanced.value === 'number' ? advanced.value : 0,
+      effect: advanced.effect,
     }
   }
 
@@ -167,13 +206,6 @@ function hideTooltip() {
   hoverAttr.value = null
 }
 
-// Gene Lock state
-const geneLockTier = computed(() => store.geneLock.tier)
-const geneLockActive = computed(() => store.geneLock.active)
-const geneLockActiveTier = computed(() => store.geneLock.activeTier)
-const maxGeneTier = 5
-
-// Segmented tick bar for basic attributes
 function getTickCount(attrKey: AttrKey): number {
   return store.attributes[attrKey]
 }
@@ -183,29 +215,40 @@ const tickMax = computed(() => store.attributeCap)
 
 <template>
   <aside class="sidebar-left">
-    <!-- Diagnostic Header -->
-    <div class="diag-header">
-      <span class="diag-pulse"></span>
-      <span class="diag-title">BIOMETRIC SCAN</span>
-      <span class="diag-id">ID:{{ store.level.toString().padStart(3, '0') }}</span>
-    </div>
+    <SquadStatus embedded :show-broadcast="false" />
 
-    <!-- Basic Attributes -->
     <div class="sb-section">
-      <div class="sb-header">
-        <span class="sb-title">▸ BASIC ATTRIBUTES</span>
-        <span class="sb-badge">{{ store.attributeCap }}MAX</span>
+      <div
+        class="sb-header sb-header--interactive"
+        role="button"
+        tabindex="0"
+        :aria-expanded="basicExpanded"
+        @click="toggleBasicSection"
+        @keydown.enter.prevent="toggleBasicSection"
+        @keydown.space.prevent="toggleBasicSection"
+      >
+        <div class="sb-toggle">
+          <span class="sb-title">▸ 基础属性</span>
+          <span class="sb-header-meta">
+            <span class="sb-badge">{{ store.attributeCap }}MAX</span>
+            <span class="sb-chevron">{{ basicExpanded ? '▾' : '▸' }}</span>
+          </span>
+        </div>
       </div>
-      <div class="sb-body">
+      <div v-if="basicExpanded" class="sb-body">
         <div class="attr-list">
-          <div v-for="attr in basicAttrs" :key="attr.key" class="attr-row"
-            @mouseenter="showTooltip($event, attr, 'basic')" @mouseleave="hideTooltip">
+          <div
+            v-for="attr in basicAttrs"
+            :key="attr.key"
+            class="attr-row"
+            @mouseenter="showTooltip($event, attr, 'basic')"
+            @mouseleave="hideTooltip"
+          >
             <div class="attr-main">
               <span class="attr-icon" :style="{ color: attr.color }">{{ attr.icon }}</span>
               <span class="attr-label">{{ attr.label }}</span>
               <span class="attr-value" :style="{ color: attr.color }">{{ store.attributes[attr.key] }}</span>
             </div>
-            <!-- Segmented tick bar -->
             <div class="tick-bar">
               <div
                 v-for="i in tickMax"
@@ -220,77 +263,32 @@ const tickMax = computed(() => store.attributeCap)
       </div>
     </div>
 
-    <!-- Special Attributes -->
     <div class="sb-section">
-      <div class="sb-header">
-        <span class="sb-title">▸ SPECIAL STATS</span>
-      </div>
-      <div class="sb-body">
-        <div class="attr-grid">
-          <div v-for="attr in specialAttrs" :key="attr.label" class="attr-box"
-            @mouseenter="showTooltip($event, attr, 'special')" @mouseleave="hideTooltip">
-            <span class="attr-icon" :style="{ color: attr.color }">{{ attr.icon }}</span>
-            <span class="attr-label">{{ attr.label }}</span>
-            <span class="attr-value" :style="{ color: attr.color }">{{ getSpecialValue(attr.key) }}</span>
-          </div>
+      <div
+        class="sb-header sb-header--interactive"
+        role="button"
+        tabindex="0"
+        :aria-expanded="advancedExpanded"
+        @click="toggleAdvancedSection"
+        @keydown.enter.prevent="toggleAdvancedSection"
+        @keydown.space.prevent="toggleAdvancedSection"
+      >
+        <div class="sb-toggle">
+          <span class="sb-title">▸ 进阶属性</span>
+          <span class="sb-header-meta">
+            <span class="sb-chevron">{{ advancedExpanded ? '▾' : '▸' }}</span>
+          </span>
         </div>
       </div>
-    </div>
-
-    <!-- Gene Lock Widget -->
-    <div class="sb-section gene-lock-section cracked-pattern eldritch-texture">
-      <div class="sb-header gene-lock-header">
-        <span class="sb-title gene-lock-title">⬡ GENE LOCK</span>
-      </div>
-      <div class="gene-lock-body">
-        <div class="gene-lock-display" :class="{ unlocked: geneLockTier > 0, active: geneLockActive }">
-          <div class="gene-lock-icon">
-            <!-- Gnarled antique gene lock SVG -->
-            <svg v-if="geneLockTier === 0" viewBox="0 0 24 24" class="gene-lock-svg locked">
-              <path d="M7,10 L7,7 C7,4 9,2 12,2 C15,2 17,4 17,7 L17,10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-              <path d="M5,10 L19,10 L19,20 L5,20 Z" fill="none" stroke="currentColor" stroke-width="1.5"/>
-              <path d="M12,13 L12,17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-              <circle cx="12" cy="15" r="1.5" fill="currentColor"/>
-              <!-- Cracked lines -->
-              <path d="M8,12 L10,14 L9,17" fill="none" stroke="rgba(255,0,51,0.4)" stroke-width="0.5"/>
-              <path d="M15,11 L14,13 L16,16" fill="none" stroke="rgba(255,0,51,0.3)" stroke-width="0.5"/>
-            </svg>
-            <svg v-else viewBox="0 0 24 24" class="gene-lock-svg unlocked-svg" :class="{ pulsing: geneLockActive }">
-              <path d="M7,10 L7,7 C7,4 9,2 12,2 C15,2 17,4 17,7 L17,10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-              <path d="M5,10 L19,10 L19,20 L5,20 Z" fill="none" stroke="currentColor" stroke-width="1.5"/>
-              <path d="M12,13 L12,17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-              <circle cx="12" cy="15" r="1.5" fill="currentColor"/>
-              <!-- Energy cracks radiating -->
-              <path d="M6,11 L4,8 M18,11 L20,8 M12,9 L12,5" fill="none" stroke="rgba(255,0,51,0.6)" stroke-width="0.6"/>
-            </svg>
-          </div>
-          <div class="gene-lock-info">
-            <span class="gene-lock-tier">TIER {{ geneLockTier }}/{{ maxGeneTier }}</span>
-            <span class="gene-lock-status" :class="{ active: geneLockActive }">
-              {{ geneLockActive ? `◆ ACTIVE T${geneLockActiveTier}` : geneLockTier > 0 ? '○ DORMANT' : '○ LOCKED' }}
-            </span>
-          </div>
-        </div>
-        <div class="gene-lock-tiers">
+      <div v-if="advancedExpanded" class="sb-body">
+        <div class="attr-grid attr-grid-derived">
           <div
-            v-for="t in maxGeneTier"
-            :key="t"
-            class="gene-tier-pip"
-            :class="{ unlocked: t <= geneLockTier, active: geneLockActive && t === geneLockActiveTier }"
-          >{{ t }}</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Advanced Attributes -->
-    <div class="sb-section" style="flex:1;">
-      <div class="sb-header">
-        <span class="sb-title">▸ 进阶属性</span>
-      </div>
-      <div class="sb-body">
-        <div class="attr-grid">
-          <div v-for="attr in advancedAttrs" :key="attr.label" class="attr-box"
-            @mouseenter="showTooltip($event, attr, 'advanced')" @mouseleave="hideTooltip">
+            v-for="attr in mergedAttrs"
+            :key="attr.label"
+            class="attr-box"
+            @mouseenter="showTooltip($event, attr.raw, attr.tooltipType)"
+            @mouseleave="hideTooltip"
+          >
             <span class="attr-icon" :style="{ color: attr.color }">{{ attr.icon }}</span>
             <span class="attr-label">{{ attr.label }}</span>
             <span class="attr-value" :style="{ color: attr.color }">{{ attr.value }}</span>
@@ -299,9 +297,12 @@ const tickMax = computed(() => store.attributeCap)
       </div>
     </div>
 
-    <!-- Tooltip -->
     <Teleport to="body">
-      <div v-if="hoverAttr" class="attr-tooltip" :style="{ left: tooltipPos.x + 12 + 'px', top: tooltipPos.y + 'px' }">
+      <div
+        v-if="hoverAttr"
+        class="attr-tooltip"
+        :style="{ left: tooltipPos.x + 12 + 'px', top: tooltipPos.y + 'px' }"
+      >
         <div class="tt-header">
           <span class="tt-icon" :style="{ color: hoverAttr.color }">{{ hoverAttr.icon }}</span>
           <span class="tt-label">{{ hoverAttr.label }}</span>
@@ -319,7 +320,7 @@ const tickMax = computed(() => store.attributeCap)
         </div>
         <div class="tt-divider"></div>
         <div class="tt-row">
-          <span class="tt-row-label">属性值合计</span>
+          <span class="tt-row-label">当前值</span>
           <span class="tt-row-value">{{ hoverAttr.value }}</span>
         </div>
         <div class="tt-effect">{{ hoverAttr.effect }}</div>
@@ -329,54 +330,45 @@ const tickMax = computed(() => store.attributeCap)
 </template>
 
 <style scoped>
-.diag-header {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  background: rgba(0, 240, 255, 0.04);
-  border-bottom: 1px solid var(--void-border);
-}
-
-.diag-pulse {
-  width: 6px;
-  height: 6px;
-  background: var(--neon-green);
-  box-shadow: 0 0 6px var(--neon-green);
-  animation: heartbeat 1.5s ease-in-out infinite;
-  flex-shrink: 0;
-}
-
-.diag-title {
-  font-family: var(--font-mono);
-  font-size: var(--text-header-sm);
-  font-weight: 700;
-  color: var(--neon-cyan);
-  letter-spacing: 0.12em;
-  flex: 1;
-}
-
-.diag-id {
-  font-family: var(--font-mono);
-  font-size: var(--text-body-sm);
-  color: var(--text-muted);
-}
-
 .sb-section {
   border-bottom: 1px solid var(--void-border);
 }
 
-.sb-section:last-child {
+.sb-section:last-of-type {
   border-bottom: none;
 }
 
 .sb-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   padding: 5px 12px;
   background: rgba(0, 240, 255, 0.025);
   border-bottom: 1px solid var(--void-border);
+}
+
+.sb-header--interactive {
+  cursor: pointer;
+}
+
+.sb-header--interactive:focus-visible {
+  outline: 1px solid var(--neon-cyan);
+  outline-offset: -1px;
+}
+
+.sb-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.sb-header-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 .sb-title {
@@ -385,7 +377,6 @@ const tickMax = computed(() => store.attributeCap)
   font-weight: 700;
   color: var(--neon-cyan);
   letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
 .sb-badge {
@@ -397,11 +388,17 @@ const tickMax = computed(() => store.attributeCap)
   border: 1px solid rgba(57, 255, 20, 0.15);
 }
 
+.sb-chevron {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1;
+  color: var(--neon-cyan);
+}
+
 .sb-body {
   padding: 6px 10px;
 }
 
-/* === Tick bar === */
 .tick-bar {
   display: flex;
   gap: 2px;
@@ -422,7 +419,6 @@ const tickMax = computed(() => store.attributeCap)
   box-shadow: 0 0 3px var(--tick-color, rgba(0, 240, 255, 0.4));
 }
 
-/* === Attr lists === */
 .attr-list {
   display: flex;
   flex-direction: column;
@@ -439,7 +435,8 @@ const tickMax = computed(() => store.attributeCap)
   clip-path: var(--clip-corner-sm);
 }
 
-.attr-row:hover {
+.attr-row:hover,
+.attr-box:hover {
   border-color: var(--void-border-strong);
   background: rgba(0, 240, 255, 0.03);
 }
@@ -456,6 +453,10 @@ const tickMax = computed(() => store.attributeCap)
   gap: 3px;
 }
 
+.attr-grid-derived {
+  grid-template-columns: 1fr 1fr;
+}
+
 .attr-box {
   display: flex;
   align-items: center;
@@ -466,11 +467,6 @@ const tickMax = computed(() => store.attributeCap)
   transition: all 0.2s;
   cursor: default;
   clip-path: var(--clip-corner-sm);
-}
-
-.attr-box:hover {
-  border-color: var(--void-border-strong);
-  background: rgba(0, 240, 255, 0.03);
 }
 
 .attr-icon {
@@ -487,6 +483,8 @@ const tickMax = computed(() => store.attributeCap)
   color: var(--text-secondary);
   flex: 1;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .attr-value {
@@ -496,158 +494,13 @@ const tickMax = computed(() => store.attributeCap)
   min-width: 32px;
   text-align: right;
   font-variant-numeric: tabular-nums;
-  animation: numberTick 4s ease-in-out infinite;
 }
 
-/* === Gene Lock Widget === */
-.gene-lock-section {
-  flex-shrink: 0;
-  position: relative;
-  overflow: hidden;
-}
-
-.gene-lock-svg {
-  width: 28px;
-  height: 28px;
-  color: var(--text-muted);
-  filter: drop-shadow(0 0 2px rgba(255,0,51,0.2));
-}
-
-.gene-lock-svg.locked {
-  color: var(--text-muted);
-  opacity: 0.5;
-}
-
-.gene-lock-svg.unlocked-svg {
-  color: var(--neon-red);
-  filter: drop-shadow(0 0 4px rgba(255,0,51,0.4));
-}
-
-.gene-lock-svg.pulsing {
-  animation: heartbeat 1s ease-in-out infinite;
-}
-
-.gene-lock-header {
-  background: rgba(255, 0, 51, 0.04);
-}
-
-.gene-lock-title {
-  color: var(--neon-red);
-  text-shadow: 0 0 4px rgba(255, 0, 51, 0.2);
-}
-
-.gene-lock-body {
-  padding: 8px 12px;
-}
-
-.gene-lock-display {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid var(--void-border);
-  transition: all 0.3s;
-  clip-path: var(--clip-corner-sm);
-}
-
-.gene-lock-display.unlocked {
-  border-color: rgba(255, 0, 51, 0.3);
-}
-
-.gene-lock-display.active {
-  border-color: var(--neon-red);
-  box-shadow: 0 0 12px rgba(255, 0, 51, 0.2);
-  animation: heartbeat 2s ease-in-out infinite;
-}
-
-.gene-lock-icon {
-  font-size: 24px;
-  line-height: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.gene-locked {
-  filter: grayscale(1);
-  opacity: 0.4;
-}
-
-.gene-unlocked.pulsing {
-  animation: heartbeat 1s ease-in-out infinite;
-  filter: drop-shadow(0 0 6px var(--neon-red));
-}
-
-.gene-lock-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  flex: 1;
-}
-
-.gene-lock-tier {
-  font-family: var(--font-mono);
-  font-size: var(--text-label-sm);
-  font-weight: 700;
-  color: var(--neon-red);
-  letter-spacing: 0.1em;
-}
-
-.gene-lock-status {
-  font-family: var(--font-mono);
-  font-size: var(--text-body-sm);
-  color: var(--text-muted);
-  letter-spacing: 0.06em;
-}
-
-.gene-lock-status.active {
-  color: var(--neon-red);
-  text-shadow: 0 0 6px rgba(255, 0, 51, 0.4);
-  animation: flicker 3s linear infinite;
-}
-
-.gene-lock-tiers {
-  display: flex;
-  gap: 4px;
-  margin-top: 6px;
-  justify-content: center;
-}
-
-.gene-tier-pip {
-  width: 28px;
-  height: 22px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 700;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid var(--void-border);
-  color: var(--text-muted);
-  clip-path: var(--clip-corner-sm);
-  transition: all 0.3s;
-}
-
-.gene-tier-pip.unlocked {
-  border-color: var(--neon-red);
-  color: var(--neon-red);
-  background: rgba(255, 0, 51, 0.06);
-}
-
-.gene-tier-pip.active {
-  background: var(--neon-red);
-  color: #000;
-  box-shadow: 0 0 8px var(--neon-red);
-  animation: heartbeat 1s ease-in-out infinite;
-}
-
-/* === Tooltip === */
 .attr-tooltip {
   position: fixed;
   z-index: 9999;
   min-width: 220px;
+  max-width: 280px;
   background: rgba(8, 8, 12, 0.98);
   border: 1px solid var(--void-border-strong);
   padding: 10px 12px;
@@ -686,6 +539,7 @@ const tickMax = computed(() => store.attributeCap)
   font-size: 11px;
   color: var(--text-muted);
   margin-bottom: 8px;
+  line-height: 1.5;
 }
 
 .tt-divider {
@@ -725,5 +579,6 @@ const tickMax = computed(() => store.attributeCap)
   margin-top: 6px;
   padding-top: 6px;
   border-top: 1px solid var(--void-border);
+  line-height: 1.5;
 }
 </style>

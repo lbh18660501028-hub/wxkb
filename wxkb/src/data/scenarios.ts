@@ -91,7 +91,7 @@ export const scenarios: ScenarioData[] = [
         description: '医院大门紧锁，铁链缠绕。你需要想办法进去。',
         skillCheck: {
           skill: '枪械',
-          attr: 'reaction',
+          attr: 'agility',
           dc: 2,
           successText: '你精准射击门锁，铁链断裂，大门缓缓打开。',
           failText: '射击偏了，巨大的声响惊动了附近的丧尸！你不得不硬闯。',
@@ -167,7 +167,7 @@ export const scenarios: ScenarioData[] = [
         description: '太空船的对接舱门被异形分泌物封住了。',
         skillCheck: {
           skill: '求生',
-          attr: 'vitality',
+          attr: 'endurance',
           dc: 3,
           successText: '你用火焰喷射器烧开了分泌物，成功进入。',
           failText: '你强行撬开舱门，但惊动了巢穴中的异形。',
@@ -235,7 +235,7 @@ export const scenarios: ScenarioData[] = [
         description: '你需要主动进入梦境，但弗莱迪会在梦中追杀你。',
         skillCheck: {
           skill: '冥想',
-          attr: 'spirit',
+          attr: 'resolve',
           dc: 4,
           successText: '你平稳地进入梦境，保持了清醒的意识。',
           failText: '你被弗莱迪拉入深层梦境，失去了先机。',
@@ -289,7 +289,7 @@ export const scenarios: ScenarioData[] = [
         description: '浓雾中能见度极低，你需要小心导航。',
         skillCheck: {
           skill: '调查',
-          attr: 'spirit',
+          attr: 'resolve',
           dc: 5,
           successText: '你凭借直觉找到了正确的方向。',
           failText: '你在浓雾中迷失了方向，被迫绕路。',
@@ -343,7 +343,7 @@ export const scenarios: ScenarioData[] = [
         description: '你预感到飞机将会爆炸，必须立刻离开！',
         skillCheck: {
           skill: '求生',
-          attr: 'spirit',
+          attr: 'resolve',
           dc: 6,
           successText: '你成功说服了几个人一起下飞机。',
           failText: '没人相信你，你只能独自逃离。',
@@ -397,7 +397,7 @@ export const scenarios: ScenarioData[] = [
         description: '酒店大堂金碧辉煌，但空气中弥漫着诡异的气息。',
         skillCheck: {
           skill: '神秘学',
-          attr: 'spirit',
+          attr: 'resolve',
           dc: 8,
           successText: '你感知到了酒店中强大的邪恶力量，做好了准备。',
           failText: '你没有察觉到异常，酒店的幻象开始侵蚀你的心智。',

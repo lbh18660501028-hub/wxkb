@@ -13,181 +13,87 @@ interface FuncItem {
 }
 
 const funcItems: FuncItem[] = [
-  { icon: '⚔', label: 'DUNGEON RAID', page: 'dungeon', accent: 'red' },
-  { icon: '◆', label: 'ITEM SHOP', page: 'shop', accent: 'cyan' },
-  { icon: '↻', label: 'EXCHANGE', page: 'exchange', accent: 'amber' },
-  { icon: '🩸', label: 'BLOODLINE', page: 'bloodline', accent: 'red' },
-  { icon: '🦾', label: 'CYBERNETICS', page: 'cybernetic', accent: 'cyan' },
-  { icon: '📜', label: 'CULTIVATION', page: 'cultivation', accent: 'green' },
-  { icon: '👁', label: 'EYE TECH', page: 'eyeTech', accent: 'purple' },
-  { icon: '⚡', label: 'ENERGY CORE', page: 'energy', accent: 'amber' },
-  { icon: '🎯', label: 'SKILL TRAIN', page: 'skills', accent: 'cyan' },
-  { icon: '🏅', label: 'TITLES', page: 'title', accent: 'amber' },
-  { icon: '👥', label: 'SQUAD', page: 'squad', accent: 'green' },
-  { icon: '🌌', label: 'MULTIVERSE', page: 'multiverse', accent: 'purple' },
+  { icon: '🗺', label: '网格副本', page: 'dungeonGrid', accent: 'cyan' },
+  { icon: '◈', label: '购买空间', page: 'shop', accent: 'cyan' },
+  { icon: '↔', label: '支线兑换', page: 'exchange', accent: 'amber' },
+  { icon: '🧬', label: '血统重塑', page: 'bloodline', accent: 'red' },
+  { icon: '🦾', label: '义体植入', page: 'cybernetic', accent: 'cyan' },
+  { icon: '📐', label: '修真总纲', page: 'cultivation', accent: 'green' },
+  { icon: '👁', label: '瞳术修炼', page: 'eyeTech', accent: 'purple' },
+  { icon: '⚡', label: '能量拓展', page: 'energy', accent: 'amber' },
+  { icon: '🎆', label: '技能修炼', page: 'skills', accent: 'cyan' },
+  { icon: '🎯', label: '称号技艺', page: 'title', accent: 'amber' },
+  { icon: '👥', label: '轮回小队', page: 'squad', accent: 'green' },
+  { icon: '🌌', label: '诸天大观', page: 'multiverse', accent: 'purple' },
 ]
 
 const basicAttrs = [
+  { icon: '💪', color: '#ff6b35', label: '力量', key: 'strength' as const },
+  { icon: '⚡', color: '#ffb000', label: '敏捷', key: 'agility' as const },
+  { icon: '❤', color: '#ff0033', label: '耐力', key: 'endurance' as const },
   { icon: '🧠', color: '#b026ff', label: '智力', key: 'intelligence' as const },
-  { icon: '◈', color: '#00f0ff', label: '精神力', key: 'spirit' as const },
-  { icon: '❤', color: '#ff0033', label: '细胞活力', key: 'vitality' as const },
-  { icon: '⚡', color: '#ffb000', label: '神经反应', key: 'reaction' as const },
-  { icon: '⬆', color: '#ff6b35', label: '肌肉强度', key: 'strength' as const },
-  { icon: '🛡', color: '#39ff14', label: '免疫强度', key: 'immunity' as const },
+  { icon: '👁', color: '#00c8ff', label: '感知', key: 'perception' as const },
+  { icon: '◈', color: '#00f0ff', label: '决心', key: 'resolve' as const },
+  { icon: '✦', color: '#ffd700', label: '风度', key: 'presence' as const },
+  { icon: '🎭', color: '#ff3366', label: '操控', key: 'manipulation' as const },
+  { icon: '🛡', color: '#39ff14', label: '沉着', key: 'composure' as const },
 ]
 
 function handleUpgrade(attr: (typeof basicAttrs)[number]) {
   store.upgradeAttribute(attr.key)
 }
-
-// Check if upgrade is available for a given function card
-function isUpgradeAvailable(page: string): boolean {
-  if (page === 'bloodline') return store.rewardPoints >= 500
-  if (page === 'cybernetic') return store.rewardPoints >= 300
-  if (page === 'eyeTech') return store.rewardPoints >= 200
-  if (page === 'energy') return store.rewardPoints >= 100
-  if (page === 'skills') return store.rewardPoints >= 50
-  if (page === 'geneLock') return (store as any).geneLockTier < 5 && store.rewardPoints >= 1000
-  return false
-}
 </script>
 
 <template>
   <div class="home-container">
-    <!-- Lord God Core -->
-    <div class="home-god-orb-section">
-      <!-- Outer atmospheric glow -->
-      <div class="god-atmosphere"></div>
-
-      <!-- The Core Sphere -->
-      <div class="home-god-orb">
-        <!-- Rotating outer ring with tech ticks -->
-        <div class="orb-tech-ring">
-          <svg viewBox="0 0 200 200" class="tech-ring-svg">
-            <circle cx="100" cy="100" r="95" fill="none" stroke="rgba(0,240,255,0.1)" stroke-width="0.5" stroke-dasharray="2 4" />
-          </svg>
-        </div>
-
-        <!-- Rotating runic ring -->
-        <div class="orb-runic-ring">
-          <svg viewBox="0 0 200 200" class="runic-ring-svg">
-            <circle cx="100" cy="100" r="80" fill="none" stroke="rgba(0,240,255,0.15)" stroke-width="0.8" stroke-dasharray="8 3 2 3" />
-          </svg>
-        </div>
-
-        <!-- Inner rotating ring -->
-        <div class="orb-inner-ring">
-          <svg viewBox="0 0 200 200" class="inner-ring-svg">
-            <circle cx="100" cy="100" r="65" fill="none" stroke="rgba(0,240,255,0.2)" stroke-width="0.5" stroke-dasharray="1 2" />
-          </svg>
-        </div>
-
-        <!-- Halo layers -->
-        <div class="orb-halo halo-outer"></div>
-        <div class="orb-halo halo-mid"></div>
-        <div class="orb-halo halo-inner"></div>
-
-        <!-- The core itself - ominous 3D sphere -->
-        <div class="orb-core">
-          <div class="orb-core-surface"></div>
-          <div class="orb-core-inner"></div>
-          <!-- Plasma filaments -->
-          <div class="orb-plasma">
-            <svg viewBox="0 0 80 80" class="plasma-svg">
-              <path d="M40,10 Q20,25 35,40 Q50,55 25,70" fill="none" stroke="rgba(0,240,255,0.4)" stroke-width="0.5" stroke-linecap="round">
-                <animate attributeName="d" dur="4s" repeatCount="indefinite"
-                  values="M40,10 Q20,25 35,40 Q50,55 25,70;M40,10 Q55,25 30,40 Q15,55 40,70;M40,10 Q20,25 35,40 Q50,55 25,70" />
-                <animate attributeName="opacity" dur="2s" repeatCount="indefinite" values="0.3;0.6;0.3" />
-              </path>
-              <path d="M40,10 Q60,25 45,40 Q30,55 55,70" fill="none" stroke="rgba(176,38,255,0.3)" stroke-width="0.4" stroke-linecap="round">
-                <animate attributeName="d" dur="5s" repeatCount="indefinite"
-                  values="M40,10 Q60,25 45,40 Q30,55 55,70;M40,10 Q25,25 50,40 Q65,55 35,70;M40,10 Q60,25 45,40 Q30,55 55,70" />
-                <animate attributeName="opacity" dur="3s" repeatCount="indefinite" values="0.2;0.5;0.2" />
-              </path>
-              <path d="M10,40 Q25,20 40,35 Q55,50 70,40" fill="none" stroke="rgba(255,0,51,0.2)" stroke-width="0.3" stroke-linecap="round">
-                <animate attributeName="d" dur="6s" repeatCount="indefinite"
-                  values="M10,40 Q25,20 40,35 Q55,50 70,40;M10,40 Q25,55 40,40 Q55,25 70,40;M10,40 Q25,20 40,35 Q55,50 70,40" />
-                <animate attributeName="opacity" dur="2.5s" repeatCount="indefinite" values="0.15;0.35;0.15" />
-              </path>
-            </svg>
-          </div>
-          <!-- Ominous central darkness -->
-          <div class="orb-core-void"></div>
-          <div class="orb-core-eye"></div>
-        </div>
-
-        <!-- Orbiting particles — 12 particles for denser field -->
-        <div class="orb-particles">
-          <div
-            v-for="i in 12"
-            :key="i"
-            class="orb-particle"
-            :style="{
-              '--delay': `${i * 0.4}s`,
-              '--angle': `${i * 30}deg`,
-              '--orbit': `${65 + (i % 3) * 8}px`
-            }"
-          ></div>
-        </div>
-
-        <!-- Scan line effect -->
-        <div class="orb-scanline"></div>
+    <section class="home-hero">
+      <div class="hero-atmosphere"></div>
+      <div class="hero-ring hero-ring--outer"></div>
+      <div class="hero-ring hero-ring--mid"></div>
+      <div class="hero-ring hero-ring--inner"></div>
+      <div class="hero-particles">
+        <span v-for="i in 10" :key="'hero-particle-' + i" class="hero-particle"></span>
       </div>
-
-      <div class="home-god-label">LORD GOD</div>
-      <div class="home-god-subtitle">INFINITE HORROR</div>
-      <div class="home-god-status">
-        <span class="status-dot"></span>
-        <span class="status-text">SYSTEM ONLINE · REINCARNATION SPACE ACTIVE</span>
+      <div class="hero-core"></div>
+      <div class="hero-scanline"></div>
+      <div class="hero-copy">
+        <div class="hero-title">主神空间</div>
+        <div class="hero-subtitle">LORD GOD / INFINITE HORROR</div>
+        <div class="hero-status">
+          <span class="status-dot"></span>
+          <span>SYSTEM ONLINE / 轮回空间已激活</span>
+        </div>
       </div>
-    </div>
+    </section>
 
-    <!-- Function Grid -->
-    <div class="home-func-grid">
-      <!-- Attribute Upgrade Button -->
+    <section class="home-func-grid">
       <button class="home-func-box home-upgrade-btn" @click="showUpgradePanel = true">
-        <div class="func-corner tl"></div>
-        <div class="func-corner tr"></div>
-        <div class="func-corner bl"></div>
-        <div class="func-corner br"></div>
-        <div class="home-func-icon">⬆</div>
-        <div class="home-func-label">ATTRIBUTE</div>
-        <div class="func-sublabel">ENHANCE</div>
+        <div class="home-func-icon">⬢</div>
+        <div class="home-func-label">属性强化</div>
+        <div class="func-sublabel">UPGRADE</div>
       </button>
 
-      <!-- Function cards -->
       <button
         v-for="item in funcItems"
         :key="item.page"
-        class="home-func-box glitch-hover"
-        :class="[
-          'accent-' + item.accent,
-          { 'upgrade-available': isUpgradeAvailable(item.page) }
-        ]"
+        class="home-func-box"
+        :class="'accent-' + item.accent"
         @click="store.setPage(item.page as any)"
       >
-        <div class="func-corner tl"></div>
-        <div class="func-corner tr"></div>
-        <div class="func-corner bl"></div>
-        <div class="func-corner br"></div>
         <div class="home-func-icon">{{ item.icon }}</div>
         <div class="home-func-label">{{ item.label }}</div>
-        <!-- Glitch overlay on hover -->
-        <div class="card-glitch-overlay"></div>
       </button>
-    </div>
+    </section>
 
-    <!-- Upgrade Panel Modal -->
     <div v-if="showUpgradePanel" class="upgrade-overlay" @click.self="showUpgradePanel = false">
       <div class="upgrade-panel">
         <div class="panel-header">
-          <span class="panel-icon">⬆</span>
-          <span class="panel-title-text">属性强化 · ATTRIBUTE UPGRADE</span>
-          <button class="panel-close" @click="showUpgradePanel = false">✕</button>
+          <span class="panel-title-text">属性强化 / ATTRIBUTE UPGRADE</span>
+          <button class="panel-close" @click="showUpgradePanel = false">×</button>
         </div>
-        <div class="panel-subtitle">向主神许愿，强化你的属性</div>
+        <div class="panel-subtitle">向主神许愿，强化你的基础属性</div>
         <div class="panel-reward">
-          <span class="reward-label">◆ REWARD POINTS</span>
+          <span class="reward-label">◈ REWARD POINTS</span>
           <span class="reward-value">{{ Math.floor(store.rewardPoints) }}</span>
         </div>
 
@@ -202,7 +108,7 @@ function isUpgradeAvailable(page: string): boolean {
               <span class="next-arrow">→</span>
               <span class="next-value" :style="{ color: attr.color }">{{ store.attributes[attr.key] + 1 }}</span>
             </div>
-            <div class="card-cost">◆ {{ store.getAttributeCost(store.attributes[attr.key]) }}</div>
+            <div class="card-cost">◈ {{ store.getAttributeCost(store.attributes[attr.key]) }}</div>
             <button
               class="upgrade-go"
               :disabled="store.rewardPoints < store.getAttributeCost(store.attributes[attr.key]) || store.attributes[attr.key] >= store.attributeCap"
@@ -221,294 +127,178 @@ function isUpgradeAvailable(page: string): boolean {
 .home-container {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  padding: 20px 16px 32px;
-  gap: 20px;
+  gap: 18px;
+  padding: 18px 16px 28px;
   min-height: 100%;
 }
 
-/* === Lord God Core === */
-.home-god-orb-section {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
+.home-hero {
   position: relative;
-  padding: 20px 0;
+  display: grid;
+  place-items: center;
+  min-height: 260px;
+  overflow: hidden;
+  border: 1px solid var(--void-border);
+  background:
+    radial-gradient(circle at center, rgba(0, 240, 255, 0.14) 0%, rgba(0, 240, 255, 0.04) 20%, rgba(5, 5, 8, 0.96) 62%),
+    linear-gradient(180deg, rgba(8, 14, 18, 0.96), rgba(5, 5, 8, 0.98));
+  clip-path: var(--clip-corner);
 }
 
-.god-atmosphere {
+.hero-atmosphere {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 400px;
-  height: 400px;
-  transform: translate(-50%, -50%);
-  background: radial-gradient(circle, rgba(0,240,255,0.06) 0%, rgba(0,0,0,0) 60%);
+  inset: -18% -8%;
+  background:
+    radial-gradient(circle at center, rgba(0, 240, 255, 0.08) 0%, rgba(0, 240, 255, 0.03) 28%, transparent 58%),
+    radial-gradient(circle at center, rgba(176, 38, 255, 0.06) 0%, transparent 52%);
+  filter: blur(10px);
+}
+
+.hero-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 240, 255, 0.14);
   pointer-events: none;
 }
 
-.home-god-orb {
-  width: 200px;
-  height: 200px;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.hero-ring--outer {
+  width: 228px;
+  height: 228px;
+  border-style: dashed;
+  animation: heroSpin 28s linear infinite;
 }
 
-/* Tech ring - outermost */
-.orb-tech-ring {
-  position: absolute;
-  inset: 0;
-  animation: ringRotate 60s linear infinite;
+.hero-ring--mid {
+  width: 182px;
+  height: 182px;
+  border-color: rgba(0, 240, 255, 0.2);
+  box-shadow: inset 0 0 18px rgba(0, 240, 255, 0.05);
+  animation: heroSpinReverse 18s linear infinite;
 }
 
-.tech-ring-svg {
-  width: 100%;
-  height: 100%;
+.hero-ring--inner {
+  width: 146px;
+  height: 146px;
+  border-color: rgba(255, 255, 255, 0.12);
+  animation: heroPulseRing 4s ease-in-out infinite;
 }
 
-/* Runic ring */
-.orb-runic-ring {
-  position: absolute;
-  inset: 0;
-  animation: ringRotateRev 40s linear infinite;
-}
-
-.runic-ring-svg {
-  width: 100%;
-  height: 100%;
-}
-
-/* Inner ring */
-.orb-inner-ring {
-  position: absolute;
-  inset: 0;
-  animation: ringRotate 30s linear infinite;
-}
-
-.inner-ring-svg {
-  width: 100%;
-  height: 100%;
-}
-
-/* Halos */
-.orb-halo {
-  position: absolute;
-  border-radius: 50%;
-  animation: haloPulse 4s ease-in-out infinite;
-  pointer-events: none;
-}
-
-.halo-outer {
-  width: 180px;
-  height: 180px;
-  background: radial-gradient(circle, rgba(0,240,255,0.08) 0%, rgba(0,240,255,0.02) 50%, transparent 70%);
-}
-
-.halo-mid {
-  width: 140px;
-  height: 140px;
-  background: radial-gradient(circle, rgba(0,240,255,0.12) 0%, rgba(0,240,255,0.04) 50%, transparent 70%);
-  animation-delay: 0.5s;
-}
-
-.halo-inner {
-  width: 110px;
-  height: 110px;
-  background: radial-gradient(circle, rgba(0,240,255,0.15) 0%, rgba(0,240,255,0.06) 50%, transparent 70%);
-  animation-delay: 1s;
-}
-
-/* The Core - ominous 3D sphere */
-.orb-core {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  position: relative;
-  z-index: 3;
-  animation: coreBreath 4s ease-in-out infinite;
-}
-
-/* Plasma filaments SVG */
-.orb-plasma {
-  position: absolute;
-  inset: 0;
-  z-index: 4;
-  pointer-events: none;
-}
-
-.plasma-svg {
-  width: 100%;
-  height: 100%;
-  filter: drop-shadow(0 0 2px rgba(0,240,255,0.3));
-}
-
-/* Ominous central darkness — a void at the core */
-.orb-core-void {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 28px;
-  height: 28px;
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(0,0,0,1) 0%, rgba(0,0,0,0.95) 40%, rgba(10,5,15,0.7) 70%, transparent 100%);
-  z-index: 5;
-  animation: voidPulse 5s ease-in-out infinite;
-}
-
-@keyframes voidPulse {
-  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.9; }
-  50% { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
-}
-
-.orb-core-surface {
-  position: absolute;
-  inset: 0;
+.hero-core {
+  width: 120px;
+  height: 120px;
   border-radius: 50%;
   background:
-    radial-gradient(circle at 35% 30%, rgba(255,255,255,0.9) 0%, rgba(0,240,255,0.7) 15%, rgba(0,100,130,0.8) 40%, rgba(0,20,30,0.95) 70%, rgba(0,0,0,1) 100%);
+    radial-gradient(circle at 35% 35%, rgba(255,255,255,0.92), rgba(0,240,255,0.75) 18%, rgba(0,80,110,0.88) 46%, rgba(0,0,0,0.98) 100%);
   box-shadow:
-    inset 0 0 20px rgba(0,0,0,0.6),
-    inset 0 0 40px rgba(0,240,255,0.1);
+    0 0 28px rgba(0, 240, 255, 0.3),
+    0 0 84px rgba(0, 240, 255, 0.16),
+    inset 0 0 18px rgba(255,255,255,0.16);
+  animation: corePulse 4s ease-in-out infinite;
+  z-index: 2;
 }
 
-.orb-core-inner {
+.hero-particles {
   position: absolute;
-  inset: 15px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.4) 0%, rgba(0,240,255,0.2) 30%, transparent 60%);
-  animation: coreInnerPulse 2s ease-in-out infinite alternate;
+  width: 240px;
+  height: 240px;
+  animation: heroSpin 22s linear infinite;
 }
 
-/* Ominous eye in center */
-.orb-core-eye {
+.hero-particle {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 20px;
-  height: 20px;
-  transform: translate(-50%, -50%);
+  width: 4px;
+  height: 4px;
+  margin-left: -2px;
+  margin-top: -2px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(0,240,255,0.8) 0%, rgba(0,240,255,0.3) 50%, transparent 70%);
-  box-shadow: 0 0 15px rgba(0,240,255,0.5);
-  animation: eyePulse 3s ease-in-out infinite;
+  background: rgba(0, 240, 255, 0.88);
+  box-shadow: 0 0 8px rgba(0, 240, 255, 0.45);
 }
 
-/* Particles */
-.orb-particles {
+.hero-particle:nth-child(1) { transform: rotate(0deg) translateX(108px); }
+.hero-particle:nth-child(2) { transform: rotate(36deg) translateX(100px); width: 3px; height: 3px; }
+.hero-particle:nth-child(3) { transform: rotate(72deg) translateX(116px); }
+.hero-particle:nth-child(4) { transform: rotate(108deg) translateX(96px); background: rgba(176, 38, 255, 0.84); }
+.hero-particle:nth-child(5) { transform: rotate(144deg) translateX(112px); }
+.hero-particle:nth-child(6) { transform: rotate(180deg) translateX(104px); width: 2px; height: 2px; }
+.hero-particle:nth-child(7) { transform: rotate(216deg) translateX(114px); }
+.hero-particle:nth-child(8) { transform: rotate(252deg) translateX(98px); background: rgba(255, 176, 0, 0.82); }
+.hero-particle:nth-child(9) { transform: rotate(288deg) translateX(110px); }
+.hero-particle:nth-child(10) { transform: rotate(324deg) translateX(102px); width: 3px; height: 3px; }
+
+.hero-scanline {
   position: absolute;
   inset: 0;
-  animation: ringRotate 20s linear infinite;
-  pointer-events: none;
-}
-
-.orb-particle {
-  position: absolute;
-  width: 3px;
-  height: 3px;
-  top: 50%;
-  left: 50%;
-  border-radius: 50%;
-  background: var(--neon-cyan);
-  box-shadow: 0 0 6px var(--neon-cyan), 0 0 10px rgba(0,240,255,0.3);
-  animation: particleFloat 3s ease-in-out infinite;
-  animation-delay: var(--delay);
-  transform: rotate(var(--angle)) translateX(var(--orbit, 70px));
-}
-
-/* Smaller secondary particle variant */
-.orb-particle:nth-child(3n) {
-  width: 2px;
-  height: 2px;
-  opacity: 0.6;
-}
-.orb-particle:nth-child(4n) {
-  background: var(--neon-purple);
-  box-shadow: 0 0 5px var(--neon-purple);
-}
-
-/* Scan line */
-.orb-scanline {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
   overflow: hidden;
   pointer-events: none;
 }
 
-.orb-scanline::after {
+.hero-scanline::after {
   content: '';
   position: absolute;
-  top: 0;
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(90deg, transparent, rgba(0,240,255,0.4), transparent);
-  animation: scanOrb 3s linear infinite;
+  background: linear-gradient(90deg, transparent, rgba(0, 240, 255, 0.32), transparent);
+  animation: heroScan 4.2s linear infinite;
 }
 
-.home-god-label {
+.hero-copy {
+  position: absolute;
+  inset: auto 0 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+  z-index: 3;
+}
+
+.hero-title {
   font-family: var(--font-mono);
-  font-size: var(--text-display-lg);
+  font-size: 28px;
   font-weight: 700;
   color: var(--neon-cyan);
-  letter-spacing: 16px;
-  text-shadow: 0 0 20px rgba(0, 240, 255, 0.6), 0 0 40px rgba(0, 240, 255, 0.3);
-  z-index: 2;
+  letter-spacing: 6px;
+  text-shadow: 0 0 16px rgba(0, 240, 255, 0.32);
 }
 
-.home-god-subtitle {
+.hero-subtitle {
   font-family: var(--font-mono);
-  color: var(--neon-cyan);
-  font-size: var(--text-label);
-  font-weight: 600;
-  letter-spacing: 8px;
-  text-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
-  z-index: 2;
-  margin-top: 4px;
+  font-size: 12px;
+  color: rgba(0, 240, 255, 0.82);
+  letter-spacing: 3px;
 }
 
-.home-god-status {
+.hero-status {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-top: 4px;
-  z-index: 2;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--neon-green);
 }
 
 .status-dot {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
   background: var(--neon-green);
   box-shadow: 0 0 6px var(--neon-green);
-  animation: heartbeat 2s ease-in-out infinite;
 }
 
-.status-text {
-  font-family: var(--font-mono);
-  font-size: var(--text-body);
-  font-weight: 600;
-  color: var(--neon-green);
-  letter-spacing: 0.08em;
-  text-shadow: 0 0 6px rgba(57, 255, 20, 0.3);
-}
-
-/* === Function Grid === */
 .home-func-grid {
-  width: min(960px, 100%);
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
 }
 
 .home-func-box {
-  min-height: 140px;
+  min-height: 118px;
   border: 1px solid var(--void-border);
-  background: rgba(13, 13, 17, 0.85);
-  backdrop-filter: blur(8px);
+  background: rgba(10, 12, 16, 0.92);
   color: var(--text-primary);
   display: flex;
   flex-direction: column;
@@ -516,110 +306,70 @@ function isUpgradeAvailable(page: string): boolean {
   justify-content: center;
   gap: 8px;
   cursor: pointer;
-  transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s, background 0.2s;
-  font-family: var(--font-sans);
-  position: relative;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
   clip-path: var(--clip-corner);
-  overflow: hidden;
-}
-
-.home-func-box::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(0,240,255,0.02) 0%, transparent 50%);
-  pointer-events: none;
-  transition: opacity 0.3s;
 }
 
 .home-func-box:hover {
-  transform: translateY(-3px);
+  transform: translateY(-2px);
+  border-color: var(--void-border-strong);
+}
+
+.home-upgrade-btn,
+.accent-cyan:hover {
   border-color: var(--neon-cyan);
-  background: rgba(13, 13, 17, 0.95);
-  box-shadow: 0 0 20px rgba(0, 240, 255, 0.1), inset 0 0 20px rgba(0, 240, 255, 0.02);
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.1);
 }
 
-.home-func-box:hover::before {
-  background: linear-gradient(135deg, rgba(0,240,255,0.06) 0%, transparent 50%);
+.accent-red:hover {
+  border-color: var(--neon-red);
+  box-shadow: 0 0 20px rgba(255, 0, 51, 0.1);
 }
 
-/* Glitch effect on hover */
-.home-func-box:hover .home-func-icon {
-  animation: glitch 0.3s ease;
+.accent-amber:hover {
+  border-color: var(--neon-amber);
+  box-shadow: 0 0 20px rgba(255, 176, 0, 0.1);
 }
 
-/* Corner brackets */
-.func-corner {
-  position: absolute;
-  width: 8px;
-  height: 8px;
-  border-color: var(--neon-cyan);
-  opacity: 0.3;
-  transition: opacity 0.3s;
-  pointer-events: none;
+.accent-green:hover {
+  border-color: var(--neon-green);
+  box-shadow: 0 0 20px rgba(57, 255, 20, 0.1);
 }
 
-.func-corner.tl { top: 3px; left: 3px; border-top: 1px solid; border-left: 1px solid; }
-.func-corner.tr { top: 3px; right: 3px; border-top: 1px solid; border-right: 1px solid; }
-.func-corner.bl { bottom: 3px; left: 3px; border-bottom: 1px solid; border-left: 1px solid; }
-.func-corner.br { bottom: 3px; right: 3px; border-bottom: 1px solid; border-right: 1px solid; }
-
-.home-func-box:hover .func-corner {
-  opacity: 1;
-}
-
-/* Accent colors */
-.home-func-box.accent-red:hover { border-color: var(--neon-red); box-shadow: 0 0 20px rgba(255,0,51,0.1); }
-.home-func-box.accent-red:hover .func-corner { border-color: var(--neon-red); }
-
-.home-func-box.accent-green:hover { border-color: var(--neon-green); box-shadow: 0 0 20px rgba(57,255,20,0.1); }
-.home-func-box.accent-green:hover .func-corner { border-color: var(--neon-green); }
-
-.home-func-box.accent-amber:hover { border-color: var(--neon-amber); box-shadow: 0 0 20px rgba(255,176,0,0.1); }
-.home-func-box.accent-amber:hover .func-corner { border-color: var(--neon-amber); }
-
-.home-func-box.accent-purple:hover { border-color: var(--neon-purple); box-shadow: 0 0 20px rgba(176,38,255,0.1); }
-.home-func-box.accent-purple:hover .func-corner { border-color: var(--neon-purple); }
-
-.home-upgrade-btn {
-  border-color: rgba(0, 240, 255, 0.3);
-  background: rgba(0, 240, 255, 0.04);
+.accent-purple:hover {
+  border-color: var(--neon-purple);
+  box-shadow: 0 0 20px rgba(176, 38, 255, 0.1);
 }
 
 .home-func-icon {
-  font-size: 36px;
-  filter: var(--glow-cyan);
-  z-index: 1;
+  font-size: 30px;
+  line-height: 1;
+}
+
+.home-func-label,
+.func-sublabel {
+  font-family: var(--font-mono);
 }
 
 .home-func-label {
-  font-family: var(--font-mono);
-  font-size: var(--text-label-sm);
+  font-size: 13px;
   font-weight: 700;
-  color: var(--text-primary);
-  letter-spacing: 0.06em;
-  text-shadow: 0 0 8px rgba(0, 240, 255, 0.2);
-  z-index: 1;
 }
 
 .func-sublabel {
-  font-family: var(--font-mono);
-  font-size: var(--text-small);
-  font-weight: 600;
+  font-size: 11px;
   color: var(--neon-cyan);
-  letter-spacing: 0.15em;
-  z-index: 1;
+  letter-spacing: 2px;
 }
 
-/* === Upgrade Panel === */
 .upgrade-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
+  background: rgba(0, 0, 0, 0.86);
+  backdrop-filter: blur(4px);
   z-index: 80;
 }
 
@@ -643,20 +393,12 @@ function isUpgradeAvailable(page: string): boolean {
   border-bottom: 1px solid var(--void-border);
 }
 
-.panel-icon {
-  color: var(--neon-cyan);
-  font-size: 18px;
-  margin-right: 8px;
-  filter: var(--glow-cyan);
-}
-
 .panel-title-text {
   font-family: var(--font-mono);
   font-size: 15px;
   font-weight: 700;
   color: var(--neon-cyan);
   letter-spacing: 0.06em;
-  flex: 1;
 }
 
 .panel-close {
@@ -667,14 +409,8 @@ function isUpgradeAvailable(page: string): boolean {
   color: var(--text-muted);
   cursor: pointer;
   font-family: var(--font-mono);
-  font-size: 14px;
-  transition: all 0.2s;
+  font-size: 16px;
   clip-path: var(--clip-corner-sm);
-}
-
-.panel-close:hover {
-  border-color: var(--neon-red);
-  color: var(--neon-red);
 }
 
 .panel-subtitle {
@@ -699,7 +435,6 @@ function isUpgradeAvailable(page: string): boolean {
   font-family: var(--font-mono);
   font-size: 11px;
   color: var(--text-muted);
-  letter-spacing: 0.05em;
 }
 
 .reward-value {
@@ -707,7 +442,6 @@ function isUpgradeAvailable(page: string): boolean {
   font-size: 16px;
   font-weight: 700;
   color: var(--neon-cyan);
-  text-shadow: 0 0 6px rgba(0, 240, 255, 0.3);
 }
 
 .upgrade-grid {
@@ -724,11 +458,6 @@ function isUpgradeAvailable(page: string): boolean {
   flex-direction: column;
   gap: 8px;
   clip-path: var(--clip-corner-sm);
-  transition: border-color 0.2s;
-}
-
-.upgrade-card:hover {
-  border-color: var(--void-border-strong);
 }
 
 .card-top,
@@ -748,22 +477,22 @@ function isUpgradeAvailable(page: string): boolean {
   color: var(--text-secondary);
 }
 
-.card-cost {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--neon-amber);
-}
-
-.next-arrow {
-  font-family: var(--font-mono);
-  color: var(--text-muted);
-}
-
 .card-value,
 .next-value {
   font-family: var(--font-mono);
   font-size: 24px;
   font-weight: 700;
+}
+
+.card-cost,
+.next-arrow {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.card-cost {
+  color: var(--neon-amber);
 }
 
 .upgrade-go {
@@ -775,15 +504,7 @@ function isUpgradeAvailable(page: string): boolean {
   font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
   clip-path: var(--clip-corner-sm);
-  transition: all 0.2s;
-}
-
-.upgrade-go:hover:not(:disabled) {
-  background: rgba(0, 240, 255, 0.12);
-  box-shadow: 0 0 8px rgba(0, 240, 255, 0.2);
 }
 
 .upgrade-go:disabled {
@@ -791,67 +512,47 @@ function isUpgradeAvailable(page: string): boolean {
   cursor: not-allowed;
 }
 
-/* Glitch overlay for cards on hover */
-.card-glitch-overlay {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.15s;
-  background:
-    linear-gradient(90deg, transparent 0%, rgba(0,240,255,0.06) 50%, transparent 100%),
-    repeating-linear-gradient(0deg, transparent 0px, rgba(0,240,255,0.03) 1px, transparent 2px, transparent 3px);
-  mix-blend-mode: screen;
-}
-
-.home-func-box:hover .card-glitch-overlay {
-  opacity: 1;
-  animation: glitchHover 0.35s ease;
-}
-
-/* === Animations === */
-@keyframes coreBreath {
+@keyframes corePulse {
   0%, 100% {
-    box-shadow: 0 0 40px rgba(0,240,255,0.3), 0 0 80px rgba(0,240,255,0.15), inset 0 0 30px rgba(0,240,255,0.2);
+    transform: scale(1);
+    box-shadow:
+      0 0 28px rgba(0, 240, 255, 0.3),
+      0 0 84px rgba(0, 240, 255, 0.16),
+      inset 0 0 18px rgba(255,255,255,0.16);
   }
   50% {
-    box-shadow: 0 0 60px rgba(0,240,255,0.5), 0 0 120px rgba(0,240,255,0.25), inset 0 0 40px rgba(0,240,255,0.3);
+    transform: scale(1.04);
+    box-shadow:
+      0 0 32px rgba(0, 240, 255, 0.38),
+      0 0 96px rgba(0, 240, 255, 0.2),
+      inset 0 0 20px rgba(255,255,255,0.22);
   }
 }
 
-@keyframes coreInnerPulse {
-  0% { opacity: 0.6; }
-  100% { opacity: 1; }
+@keyframes heroSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
-@keyframes eyePulse {
-  0%, 100% { opacity: 0.6; transform: translate(-50%, -50%) scale(1); }
-  50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+@keyframes heroSpinReverse {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
 }
 
-@keyframes haloPulse {
-  0%, 100% { transform: scale(1); opacity: 0.5; }
-  50% { transform: scale(1.1); opacity: 0.9; }
+@keyframes heroPulseRing {
+  0%, 100% { transform: scale(1); opacity: 0.7; }
+  50% { transform: scale(1.04); opacity: 1; }
 }
 
-@keyframes particleFloat {
-  0%, 100% { opacity: 0.3; transform: rotate(var(--angle)) translateX(var(--orbit, 70px)); }
-  50% { opacity: 1; transform: rotate(var(--angle)) translateX(calc(var(--orbit, 70px) + 8px)); }
+@keyframes heroScan {
+  0% { top: 8%; opacity: 0; }
+  8% { opacity: 1; }
+  92% { opacity: 1; }
+  100% { top: 92%; opacity: 0; }
 }
 
-@keyframes scanOrb {
-  0% { top: 0; opacity: 0; }
-  10% { opacity: 1; }
-  90% { opacity: 1; }
-  100% { top: 100%; opacity: 0; }
-}
-
-/* === Responsive === */
 @media (max-width: 1024px) {
-  .home-func-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
+  .home-func-grid,
   .upgrade-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -863,9 +564,9 @@ function isUpgradeAvailable(page: string): boolean {
     grid-template-columns: 1fr;
   }
 
-  .home-god-orb {
-    width: 160px;
-    height: 160px;
+  .hero-title {
+    font-size: 24px;
+    letter-spacing: 4px;
   }
 }
 </style>

@@ -5,34 +5,40 @@ import { PROFESSIONS, getProfessionById } from '../../data/characterCreate'
 import { getItemById, shopItems } from '../../data/shop'
 import { COMPANION_CONFIG, getRecruitCost } from '../../data/companion'
 import { SLOT_NAMES, TIER_COLORS, formatStats as formatEquipmentStats, type EquipmentSlot } from '../../types/equipment'
-import type { Companion, Attributes } from '../../types/game'
+import type { Attributes } from '../../types/game'
 
 const store = useGameStore()
 
 const showRecruitPanel = ref(false)
 const recruitName = ref('')
 const recruitProfession = ref('')
-const selectedCompanion = ref<string | null>(null)
+const selectedCharId = ref<string | null>(null)
 const selectedSlot = ref<EquipmentSlot | null>(null)
 
-const companions = computed(() => store.getCompanions())
-const recruitCost = computed(() => getRecruitCost(companions.value.length))
-const canRecruit = computed(() => store.canRecruitCompanion())
+// 统一角色列表（含主角）
+const allCharacters = computed(() => store.getCharacters())
+const recruitCost = computed(() => getRecruitCost(allCharacters.value.length - 1))
+const canRecruit = computed(() => store.canRecruitCharacter())
 
 const slots: EquipmentSlot[] = ['weapon', 'armor', 'helmet', 'gloves', 'boots', 'accessory']
 
-const selectedCompanionData = computed(() => {
-  if (!selectedCompanion.value) return null
-  return companions.value.find(c => c.id === selectedCompanion.value) || null
+const selectedCharIndex = computed(() => {
+  if (!selectedCharId.value) return -1
+  return allCharacters.value.findIndex(c => c.id === selectedCharId.value)
 })
 
-const companionCombatStats = computed(() => {
-  if (!selectedCompanionData.value) return null
-  return store.getCompanionCombatStats(selectedCompanionData.value)
+const selectedCharData = computed(() => {
+  if (selectedCharIndex.value < 0) return null
+  return allCharacters.value[selectedCharIndex.value]
+})
+
+const charCombatStats = computed(() => {
+  if (selectedCharIndex.value < 0) return null
+  return store.getCharacterCombatStats(selectedCharIndex.value)
 })
 
 const availableItems = computed(() => {
-  if (!selectedSlot.value || !selectedCompanionData.value) return []
+  if (!selectedSlot.value || !selectedCharData.value) return []
   const categoryMap: Record<string, string> = {
     weapon: 'weapon', armor: 'armor', helmet: 'helmet',
     gloves: 'gloves', boots: 'boots', accessory: 'accessory',
@@ -46,7 +52,7 @@ const availableItems = computed(() => {
 
 function doRecruit() {
   if (!recruitName.value.trim() || !recruitProfession.value) return
-  const success = store.recruitCompanion(recruitName.value.trim(), recruitProfession.value, 'male')
+  const success = store.recruitCharacter(recruitName.value.trim(), recruitProfession.value, 'male')
   if (success) {
     showRecruitPanel.value = false
     recruitName.value = ''
@@ -55,12 +61,12 @@ function doRecruit() {
 }
 
 function doRemove(id: string) {
-  store.removeCompanion(id)
-  if (selectedCompanion.value === id) selectedCompanion.value = null
+  store.removeCharacter(id)
+  if (selectedCharId.value === id) selectedCharId.value = null
 }
 
-function selectCompanion(id: string) {
-  selectedCompanion.value = selectedCompanion.value === id ? null : id
+function selectChar(id: string) {
+  selectedCharId.value = selectedCharId.value === id ? null : id
   selectedSlot.value = null
 }
 
@@ -69,27 +75,30 @@ function selectSlot(slot: EquipmentSlot) {
 }
 
 function doEquip(itemId: string) {
-  if (!selectedCompanion.value || !selectedSlot.value) return
-  store.equipCompanionItem(selectedCompanion.value, itemId, selectedSlot.value)
+  if (selectedCharIndex.value < 0 || !selectedSlot.value) return
+  store.equipCharacterItem(selectedCharIndex.value, itemId, selectedSlot.value)
 }
 
 function doUnequip(slot: EquipmentSlot) {
-  if (!selectedCompanion.value) return
-  store.unequipCompanionItem(selectedCompanion.value, slot)
+  if (selectedCharIndex.value < 0) return
+  store.unequipCharacterItem(selectedCharIndex.value, slot)
 }
 
 function doUpgradeAttr(attr: keyof Attributes) {
-  if (!selectedCompanion.value) return
-  store.upgradeCompanionAttribute(selectedCompanion.value, attr)
+  if (selectedCharIndex.value < 0) return
+  store.upgradeCharacterAttribute(selectedCharIndex.value, attr)
 }
 
 const attrDefs = [
+  { key: 'strength' as const, label: '力量', icon: '💪', color: '#ff6b35' },
+  { key: 'agility' as const, label: '敏捷', icon: '⚡', color: '#ffb000' },
+  { key: 'endurance' as const, label: '耐力', icon: '❤', color: '#ff0033' },
   { key: 'intelligence' as const, label: '智力', icon: '🧠', color: '#9d4edd' },
-  { key: 'spirit' as const, label: '精神力', icon: '💎', color: '#5080b0' },
-  { key: 'vitality' as const, label: '细胞活力', icon: '❤', color: '#c04040' },
-  { key: 'reaction' as const, label: '神经反应', icon: '⚡', color: '#d4a85a' },
-  { key: 'strength' as const, label: '肌肉强度', icon: '💪', color: '#ff6b35' },
-  { key: 'immunity' as const, label: '免疫强度', icon: '🛡', color: '#50a080' },
+  { key: 'perception' as const, label: '感知', icon: '👁', color: '#00c8ff' },
+  { key: 'resolve' as const, label: '决心', icon: '◈', color: '#00f0ff' },
+  { key: 'presence' as const, label: '风度', icon: '✦', color: '#ffd700' },
+  { key: 'manipulation' as const, label: '操控', icon: '🎭', color: '#ff3366' },
+  { key: 'composure' as const, label: '沉着', icon: '🛡', color: '#39ff14' },
 ]
 </script>
 
@@ -98,26 +107,26 @@ const attrDefs = [
     <div class="card-panel">
       <div class="card-header">
         <span class="card-title">👥 轮回小队</span>
-        <span class="card-subtitle">{{ companions.length }}/{{ COMPANION_CONFIG.MAX_COMPANIONS }}</span>
+        <span class="card-subtitle">{{ allCharacters.length }}/{{ 1 + COMPANION_CONFIG.MAX_COMPANIONS }}</span>
       </div>
       <div class="card-body">
         <!-- 招募按钮 -->
         <button
-          v-if="companions.length < COMPANION_CONFIG.MAX_COMPANIONS"
+          v-if="allCharacters.length < 1 + COMPANION_CONFIG.MAX_COMPANIONS"
           class="recruit-btn"
           :disabled="!canRecruit"
           @click="showRecruitPanel = !showRecruitPanel"
         >
           <span class="recruit-icon">➕</span>
-          <span>向主神请求新队友</span>
+          <span>向主神请求新角色</span>
           <span class="recruit-cost">💎{{ recruitCost }}</span>
         </button>
-        <div v-else class="max-reached">队友数量已达上限</div>
+        <div v-else class="max-reached">队伍人数已达上限</div>
 
         <!-- 招募面板 -->
         <div v-if="showRecruitPanel" class="recruit-panel">
           <div class="recruit-field">
-            <label>队友名称</label>
+            <label>角色名称</label>
             <input v-model="recruitName" placeholder="输入名字" maxlength="8" />
           </div>
           <div class="recruit-field">
@@ -148,44 +157,49 @@ const attrDefs = [
           </div>
         </div>
 
-        <!-- 队友列表 -->
+        <!-- 角色列表（统一，含主角） -->
         <div class="companion-list">
           <div
-            v-for="companion in companions"
-            :key="companion.id"
+            v-for="(char, index) in allCharacters"
+            :key="char.id"
             class="companion-card"
-            :class="{ selected: selectedCompanion === companion.id }"
-            @click="selectCompanion(companion.id)"
+            :class="{ selected: selectedCharId === char.id, 'is-main': index === 0 }"
+            @click="selectChar(char.id)"
           >
             <div class="companion-header">
-              <span class="companion-icon">{{ getProfessionById(companion.professionId)?.icon || '?' }}</span>
+              <span class="companion-avatar">{{ getProfessionById(char.professionId)?.icon || '?' }}</span>
               <div class="companion-info">
-                <span class="companion-name">{{ companion.name }}</span>
-                <span class="companion-class">{{ getProfessionById(companion.professionId)?.name || '未知' }}</span>
+                <span class="companion-name">{{ char.name }}<span v-if="index === 0" class="main-tag">主角</span></span>
+                <div class="companion-bars">
+                  <div class="comp-bar">
+                    <span class="comp-bar-label">HP</span>
+                    <div class="comp-bar-track hp">
+                      <div class="comp-bar-fill hp" :style="{ width: '100%' }"></div>
+                    </div>
+                    <span class="comp-bar-num">{{ store.getCharacterCombatStats(index).hpMax }}</span>
+                  </div>
+                  <div class="comp-bar">
+                    <span class="comp-bar-label">MP</span>
+                    <div class="comp-bar-track mp">
+                      <div class="comp-bar-fill mp" :style="{ width: '100%' }"></div>
+                    </div>
+                    <span class="comp-bar-num">{{ store.getCharacterCombatStats(index).mpMax }}</span>
+                  </div>
+                </div>
               </div>
-              <button class="btn-remove" @click.stop="doRemove(companion.id)" title="离队">✕</button>
+              <button v-if="index > 0" class="btn-remove" @click.stop="doRemove(char.id)" title="离队">✕</button>
             </div>
-            <div class="companion-stats-row">
-              <span>⚔️{{ store.getCompanionCombatStats(companion).attack }}</span>
-              <span>❤{{ store.getCompanionCombatStats(companion).hpMax }}</span>
-            </div>
-          </div>
-
-          <div v-if="companions.length === 0" class="empty-hint">
-            <div class="empty-icon">👥</div>
-            <div class="empty-text">还没有队友</div>
-            <div class="empty-sub">点击上方按钮向主神请求</div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- 队友详情面板 -->
-    <div v-if="selectedCompanionData" class="card-panel detail-panel">
+    <!-- 角色详情面板 -->
+    <div v-if="selectedCharData" class="card-panel detail-panel">
       <div class="card-header">
         <span class="card-title">
-          {{ getProfessionById(selectedCompanionData.professionId)?.icon }}
-          {{ selectedCompanionData.name }} - {{ getProfessionById(selectedCompanionData.professionId)?.name }}
+          {{ getProfessionById(selectedCharData.professionId)?.icon }}
+          {{ selectedCharData.name }} - {{ getProfessionById(selectedCharData.professionId)?.name }}
         </span>
       </div>
       <div class="card-body">
@@ -196,37 +210,37 @@ const attrDefs = [
             <div v-for="attr in attrDefs" :key="attr.key" class="attr-row">
               <span class="attr-icon" :style="{ color: attr.color }">{{ attr.icon }}</span>
               <span class="attr-label">{{ attr.label }}</span>
-              <span class="attr-value">{{ selectedCompanionData.attributes[attr.key] }}</span>
+              <span class="attr-value">{{ selectedCharData.attributes[attr.key] }}</span>
               <button class="btn-upgrade-sm" @click="doUpgradeAttr(attr.key)">
-                升级 💎{{ store.getAttributeCost(selectedCompanionData.attributes[attr.key]) }}
+                升级 💎{{ store.getAttributeCost(selectedCharData.attributes[attr.key]) }}
               </button>
             </div>
           </div>
         </div>
 
         <!-- 战斗属性 -->
-        <div v-if="companionCombatStats" class="combat-section">
+        <div v-if="charCombatStats" class="combat-section">
           <div class="section-title">战斗属性</div>
           <div class="combat-grid">
             <div class="combat-stat">
               <span class="combat-label">总攻击力</span>
-              <span class="combat-value gold">{{ companionCombatStats.attack }}</span>
+              <span class="combat-value gold">{{ charCombatStats.attack }}</span>
             </div>
             <div class="combat-stat">
               <span class="combat-label">最大HP</span>
-              <span class="combat-value">{{ companionCombatStats.hpMax }}</span>
+              <span class="combat-value">{{ charCombatStats.hpMax }}</span>
             </div>
             <div class="combat-stat">
               <span class="combat-label">科技攻击</span>
-              <span class="combat-value">{{ companionCombatStats.techAttack }}</span>
+              <span class="combat-value">{{ charCombatStats.techAttack }}</span>
             </div>
             <div class="combat-stat">
               <span class="combat-label">魔幻攻击</span>
-              <span class="combat-value">{{ companionCombatStats.fantAttack }}</span>
+              <span class="combat-value">{{ charCombatStats.fantAttack }}</span>
             </div>
             <div class="combat-stat">
               <span class="combat-label">特异攻击</span>
-              <span class="combat-value">{{ companionCombatStats.abnAttack }}</span>
+              <span class="combat-value">{{ charCombatStats.abnAttack }}</span>
             </div>
           </div>
         </div>
@@ -239,14 +253,14 @@ const attrDefs = [
               v-for="slot in slots"
               :key="slot"
               class="equip-slot"
-              :class="{ active: selectedSlot === slot, occupied: selectedCompanionData.equippedItems[slot] }"
+              :class="{ active: selectedSlot === slot, occupied: selectedCharData.equippedItems[slot] }"
               @click="selectSlot(slot)"
             >
               <div class="slot-label">{{ SLOT_NAMES[slot] }}</div>
               <div class="slot-content">
-                <template v-if="selectedCompanionData.equippedItems[slot]">
-                  <span class="slot-icon">{{ getItemById(selectedCompanionData.equippedItems[slot])?.icon || '?' }}</span>
-                  <span class="slot-name">{{ getItemById(selectedCompanionData.equippedItems[slot])?.name || '?' }}</span>
+                <template v-if="selectedCharData.equippedItems[slot]">
+                  <span class="slot-icon">{{ getItemById(selectedCharData.equippedItems[slot])?.icon || '?' }}</span>
+                  <span class="slot-name">{{ getItemById(selectedCharData.equippedItems[slot])?.name || '?' }}</span>
                   <button class="btn-unequip" @click.stop="doUnequip(slot)">卸下</button>
                 </template>
                 <template v-else>
@@ -465,20 +479,85 @@ const attrDefs = [
   align-items: center;
   gap: 8px;
 }
-.companion-icon { font-size: 22px; }
+.companion-avatar {
+  font-size: 22px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 240, 255, 0.06);
+  border: 1px solid var(--void-border);
+  clip-path: var(--clip-corner-sm);
+  flex-shrink: 0;
+}
 .companion-info {
   flex: 1;
   display: flex;
   flex-direction: column;
+  gap: 4px;
+  min-width: 0;
 }
 .companion-name {
   font-size: 12px;
   font-weight: 700;
-  color: var(--color-accent-gold-light, #ffd700);
+  color: var(--neon-cyan, #00f0ff);
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
-.companion-class {
+
+.main-tag {
+  font-size: 8px;
+  padding: 1px 4px;
+  background: rgba(255, 215, 0, 0.15);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 2px;
+  color: #ffd700;
+  font-weight: 600;
+}
+
+.companion-card.is-main {
+  border-color: rgba(255, 215, 0, 0.2);
+}
+
+.companion-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.comp-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.comp-bar-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-muted, #4a5563);
+  width: 18px;
+  flex-shrink: 0;
+}
+.comp-bar-track {
+  flex: 1;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+}
+.comp-bar-fill {
+  height: 100%;
+  transition: width 0.4s var(--ease-fast);
+}
+.comp-bar-fill.hp { background: linear-gradient(90deg, var(--neon-red, #ff0033), #ff4466); box-shadow: 0 0 4px rgba(255,0,51,0.3); }
+.comp-bar-fill.mp { background: linear-gradient(90deg, var(--neon-cyan, #00f0ff), #44ddff); box-shadow: 0 0 4px rgba(0,240,255,0.3); }
+.comp-bar-num {
+  font-family: var(--font-mono);
   font-size: 10px;
-  color: var(--color-text-muted, #888);
+  color: var(--text-secondary, #8a99aa);
+  font-variant-numeric: tabular-nums;
+  min-width: 36px;
+  text-align: right;
 }
 .btn-remove {
   width: 22px;
@@ -496,14 +575,6 @@ const attrDefs = [
 }
 .btn-remove:hover {
   background: rgba(220, 50, 50, 0.3);
-}
-
-.companion-stats-row {
-  display: flex;
-  gap: 12px;
-  margin-top: 6px;
-  font-size: 11px;
-  color: #aaa;
 }
 
 .empty-hint {

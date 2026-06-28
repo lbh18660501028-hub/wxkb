@@ -1,11 +1,16 @@
-<script setup lang="ts">
-import { computed, ref, onMounted, onUnmounted } from 'vue'
+﻿<script setup lang="ts">
+import { computed, ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useGameStore } from '../stores/game'
 import { PROFESSIONS, getProfessionById } from '../data/characterCreate'
 
 const store = useGameStore()
+const props = withDefaults(defineProps<{ embedded?: boolean; showVitals?: boolean; showBroadcast?: boolean }>(), {
+  embedded: false,
+  showVitals: true,
+  showBroadcast: true,
+})
 
-const selectedId = ref<string>('player')
+const selectedId = ref<string>('char_main')
 
 interface SquadMember {
   id: string
@@ -23,50 +28,26 @@ interface SquadMember {
   speed: number
 }
 
-const playerMember = computed<SquadMember>(() => {
-  const combat = store.getAdvancedCombatStats()
-  return {
-    id: 'player',
-    name: store.name || '轮回者',
-    professionId: store.characterCreation.professionId,
-    gender: store.characterCreation.gender || 'male',
-    hp: store.getMaxHp(),
-    hpMax: store.getMaxHp(),
-    mp: store.currentMp,
-    mpMax: store.getMaxMp(),
-    attack: (combat.technologyAttack || 0) + (combat.fantasyAttack || 0) + (combat.abnormalAttack || 0),
-    techAttack: combat.technologyAttack || 0,
-    fantAttack: combat.fantasyAttack || 0,
-    abnAttack: combat.abnormalAttack || 0,
-    speed: store.getSpeed(),
-  }
-})
-
-const companionMembers = computed<SquadMember[]>(() => {
-  return store.getCompanions().map(c => {
-    const stats = store.getCompanionCombatStats(c)
+/** 缁熶竴瑙掕壊鍒楄〃 鈥?涓昏鍜岄槦鍙嬩娇鐢ㄥ悓涓€鏁版嵁婧?*/
+const allMembers = computed<SquadMember[]>(() => {
+  return store.getCharacters().map((char, index) => {
+    const stats = store.getCharacterCombatStats(index)
     return {
-      id: c.id,
-      name: c.name,
-      professionId: c.professionId,
-      gender: 'male',
+      id: char.id,
+      name: char.name,
+      professionId: char.professionId,
+      gender: char.gender || 'male',
       hp: stats.hpMax,
       hpMax: stats.hpMax,
-      mp: 0,
-      mpMax: 0,
+      mp: char.currentMp,
+      mpMax: stats.mpMax,
       attack: stats.attack,
       techAttack: stats.techAttack,
       fantAttack: stats.fantAttack,
       abnAttack: stats.abnAttack,
-      speed: 0,
+      speed: store.getCharacterSpeed(index),
     }
   })
-})
-
-const allMembers = computed<SquadMember[]>(() => [playerMember.value, ...companionMembers.value])
-
-const selectedMember = computed(() => {
-  return allMembers.value.find(m => m.id === selectedId.value) || playerMember.value
 })
 
 function getPortrait(member: SquadMember): string {
@@ -84,113 +65,84 @@ function getProfName(member: SquadMember): string {
   return getProfessionById(member.professionId)?.name || '未知'
 }
 
-function getProfPosition(member: SquadMember): string {
-  return getProfessionById(member.professionId)?.position || ''
-}
-
 function selectMember(id: string) {
   selectedId.value = id
 }
 
-const squadBonus = computed(() => {
-  try {
-    return (store as any).getSquadBonus ? (store as any).getSquadBonus() : null
-  } catch {
-    return null
+function getPortraitStyle(member: SquadMember): { objectPosition: string; transform: string } {
+  const portraitFocus: Record<string, { x: number; y: number; scale: number }> = {
+    captain: { x: 52, y: 8, scale: 3.08 },
+    smoker: { x: 50, y: 7, scale: 3 },
+    colonel: { x: 51, y: 8, scale: 3.06 },
+    prophet: { x: 51, y: 6, scale: 3.14 },
+    assassin: { x: 50, y: 6, scale: 3.24 },
+    writer: { x: 51, y: 6, scale: 3.12 },
+    killer: { x: 52, y: 7, scale: 3.02 },
+    bow: { x: 52, y: 7, scale: 3.02 },
+    medic: { x: 50, y: 6, scale: 3.18 },
+    cannon: { x: 52, y: 8, scale: 2.94 },
+    wolf: { x: 51, y: 7, scale: 3.04 },
+    archaeologist: { x: 50, y: 6, scale: 3.16 },
+    ranger: { x: 50, y: 6, scale: 3.16 },
   }
-})
+
+  const focus = portraitFocus[member.professionId] ?? { x: 51, y: 7, scale: 3.08 }
+  return {
+    objectPosition: `${focus.x}% ${focus.y}%`,
+    transform: `scale(${focus.scale})`,
+  }
+}
 
 // === Lord God Broadcast Terminal ===
 const broadcastLog = computed(() => {
   // Use the last 40 entries from the game logs
-  return store.logs.slice(-40).reverse()
+  return store.logs.slice(-40)
 })
+
+// Auto-scroll broadcast to bottom
+const broadcastTerminalRef = ref<HTMLDivElement | null>(null)
+
+function scrollBroadcastToBottom(): void {
+  nextTick(() => {
+    if (broadcastTerminalRef.value) {
+      broadcastTerminalRef.value.scrollTop = broadcastTerminalRef.value.scrollHeight
+    }
+  })
+}
+
+watch(
+  () => [
+    broadcastLog.value.length,
+    broadcastLog.value[broadcastLog.value.length - 1]?.timestamp ?? null,
+  ],
+  () => {
+    scrollBroadcastToBottom()
+  },
+  { flush: 'post', immediate: true },
+)
 
 // Simulated broadcast messages for atmosphere
 const ambientBroadcasts = [
-  { text: '[SYSTEM]: Lord God dimension stabilized.', type: 'info' },
-  { text: '[WARNING]: Team Alpha entered Resident Evil zone.', type: 'danger' },
-  { text: '[BROADCAST]: New cycle available for entry.', type: 'gold' },
+  { text: '[SYSTEM]: dimensional anchor stable', type: 'info' },
+  { text: '[WARNING]: Alpha squad entered biohazard sector', type: 'danger' },
+  { text: '[BROADCAST]: new reincarnation instance opened', type: 'gold' },
 ]
-
-// Generate realistic log messages with timestamps
-function generateLogMessage(log: { type: string; message: string; timestamp: number }): string {
-  const time = formatTime(log.timestamp)
-  const typeUpper = log.type.toUpperCase()
-
-  // Map log types to English descriptions
-  const typeMap: Record<string, string> = {
-    'combat': 'COMBAT',
-    'loot': 'LOOT',
-    'level': 'LEVEL UP',
-    'system': 'SYSTEM',
-    'error': 'ERROR',
-    'info': 'INFO',
-    'warning': 'WARNING',
-    'quest': 'QUEST',
-    'trade': 'TRADE',
-    'dungeon': 'DUNGEON',
-    'skill': 'SKILL',
-    'bloodline': 'BLOODLINE',
-    'equipment': 'EQUIPMENT',
-  }
-
-  const logType = typeMap[log.type] || typeUpper
-
-  // Translate common Chinese messages to English
-  let message = log.message
-    .replace(/获得/g, 'Acquired ')
-    .replace(/经验值/g, 'XP')
-    .replace(/奖励点/g, 'Reward Points')
-    .replace(/等级提升/g, 'Level Up!')
-    .replace(/进入/g, 'Entered ')
-    .replace(/副本/g, 'Dungeon')
-    .replace(/战斗/g, 'Combat')
-    .replace(/胜利/g, 'Victory')
-    .replace(/失败/g, 'Defeat')
-    .replace(/击杀/g, 'Killed ')
-    .replace(/发现/g, 'Discovered ')
-    .replace(/装备/g, 'Equipment')
-    .replace(/技能/g, 'Skill')
-    .replace(/血统/g, 'Bloodline')
-    .replace(/基因锁/g, 'Gene Lock')
-    .replace(/队友/g, 'Teammate')
-    .replace(/加入/g, 'joined')
-    .replace(/离开/g, 'left')
-    .replace(/死亡/g, 'died')
-    .replace(/复活/g, 'revived')
-    .replace(/完成任务/g, 'Completed quest')
-    .replace(/接受任务/g, 'Accepted quest')
-    .replace(/出售/g, 'Sold ')
-    .replace(/购买/g, 'Purchased ')
-    .replace(/金币/g, 'Gold')
-
-  return `[${time}] ${logType}: ${message}`
-}
 
 let ambientTimer: ReturnType<typeof setInterval> | null = null
 const showAmbient = ref(false)
 
-// ECG wave path — more complex, multi-beat pattern
-const ecgPath = 'M0,20 L20,20 L22,18 L24,22 L26,20 L40,20 L42,10 L44,30 L46,5 L48,35 L50,20 L65,20 L67,18 L69,22 L71,20 L85,20 L87,10 L89,30 L91,5 L93,35 L95,20 L110,20 L112,18 L114,22 L116,20 L130,20 L132,10 L134,30 L136,5 L138,35 L140,20 L155,20 L157,18 L159,22 L161,20 L175,20 L177,10 L179,30 L181,5 L183,35 L185,20 L200,20 L202,18 L204,22 L206,20 L220,20'
-
-// Simulated heart rate — fluctuates over time
-const heartRate = ref(72)
-let hrTimer: ReturnType<typeof setInterval> | null = null
+watch(showAmbient, () => {
+  scrollBroadcastToBottom()
+}, { flush: 'post' })
 
 onMounted(() => {
   ambientTimer = setInterval(() => {
     showAmbient.value = !showAmbient.value
   }, 8000)
-  // Simulate heart rate fluctuation
-  hrTimer = setInterval(() => {
-    heartRate.value = 68 + Math.floor(Math.random() * 12)
-  }, 2000)
 })
 
 onUnmounted(() => {
   if (ambientTimer) clearInterval(ambientTimer)
-  if (hrTimer) clearInterval(hrTimer)
 })
 
 function formatTime(ts: number): string {
@@ -200,21 +152,23 @@ function formatTime(ts: number): string {
 </script>
 
 <template>
-  <aside class="squad-status">
+  <aside
+    class="squad-status"
+    :class="{
+      embedded: props.embedded,
+      'broadcast-only': !props.showVitals && props.showBroadcast,
+      'vitals-only': props.showVitals && !props.showBroadcast,
+    }"
+  >
     <!-- Squad Vitals Header -->
-    <div class="squad-header">
+    <div v-if="props.showVitals" class="squad-header">
       <span class="squad-pulse"></span>
-      <span class="squad-title">SQUAD VITALS</span>
+      <span class="squad-title">小队生命体征</span>
       <span class="squad-count">{{ allMembers.length }}/4</span>
     </div>
 
-    <div v-if="squadBonus" class="squad-bonus-banner">
-      <span class="bonus-icon">✦</span>
-      <span class="bonus-text">{{ squadBonus }}</span>
-    </div>
-
-    <!-- Squad Member Cards (ICU style) -->
-    <div class="squad-list">
+    <!-- Squad Member Cards -->
+    <div v-if="props.showVitals" class="squad-list">
       <div
         v-for="member in allMembers"
         :key="member.id"
@@ -223,27 +177,21 @@ function formatTime(ts: number): string {
         @click="selectMember(member.id)"
       >
         <div class="member-portrait">
-          <img :src="getPortrait(member)" :alt="member.name" class="portrait-img" />
-          <div class="portrait-frame" :class="{ glow: selectedId === member.id }"></div>
-          <!-- ECG wave overlay — active ICU monitor -->
-          <div class="ecg-monitor">
-            <svg class="ecg-overlay" viewBox="0 0 220 40" preserveAspectRatio="none">
-              <path :d="ecgPath" class="ecg-line" :class="{ active: selectedId === member.id }" />
+          <img :src="getPortrait(member)" :alt="member.name" class="portrait-img" :style="getPortraitStyle(member)" />
+          <div class="portrait-ecg" :class="{ active: selectedId === member.id }">
+            <span class="ecg-dot"></span>
+            <svg viewBox="0 0 64 12" class="ecg-line" preserveAspectRatio="none" aria-hidden="true">
+              <path d="M0 7 H10 L14 7 L17 4 L20 10 L24 2 L28 8 L34 7 H64" />
             </svg>
-            <!-- HR readout -->
-            <span class="ecg-hr" :class="{ active: selectedId === member.id }">
-              {{ selectedId === member.id ? heartRate : 70 + (member.id.charCodeAt(0) % 10) }} BPM
-            </span>
           </div>
+          <div class="portrait-frame" :class="{ glow: selectedId === member.id }"></div>
         </div>
 
         <div class="member-body">
           <div class="member-header">
-            <span class="member-name">{{ member.name }}</span>
             <span class="member-class">{{ getProfIcon(member) }} {{ getProfName(member) }}</span>
+            <span class="member-name">{{ member.name }}</span>
           </div>
-
-          <div class="member-role">{{ getProfPosition(member) }}</div>
 
           <div class="bar-group">
             <div class="bar-row">
@@ -262,12 +210,6 @@ function formatTime(ts: number): string {
               <span class="bar-num">{{ member.mp }}/{{ member.mpMax }}</span>
             </div>
           </div>
-
-          <div class="stat-row">
-            <span class="stat-chip tech" v-if="member.techAttack">⚙ {{ member.techAttack }}</span>
-            <span class="stat-chip fant" v-if="member.fantAttack">✦ {{ member.fantAttack }}</span>
-            <span class="stat-chip abn" v-if="member.abnAttack">◈ {{ member.abnAttack }}</span>
-          </div>
         </div>
       </div>
 
@@ -276,19 +218,19 @@ function formatTime(ts: number): string {
           <span class="empty-icon">+</span>
         </div>
         <div class="member-body">
-          <span class="empty-text">SLOT EMPTY · RECRUIT</span>
+          <span class="empty-text">空位</span>
         </div>
       </div>
     </div>
 
     <!-- Lord God Broadcast Terminal -->
-    <div class="broadcast-section">
+    <div v-if="props.showBroadcast" class="broadcast-section">
       <div class="broadcast-header">
         <span class="broadcast-dot"></span>
-        <span class="broadcast-title">◈ LORD GOD BROADCAST</span>
+        <span class="broadcast-title">◈ 主神广播</span>
         <span class="broadcast-rate">{{ broadcastLog.length }}PKTS</span>
       </div>
-      <div class="broadcast-terminal refresh-flicker">
+      <div ref="broadcastTerminalRef" class="broadcast-terminal refresh-flicker">
         <!-- Terminal scanline -->
         <div class="terminal-scanline"></div>
         <!-- Ambient broadcast -->
@@ -308,7 +250,8 @@ function formatTime(ts: number): string {
             class="broadcast-entry"
             :class="log.type"
           >
-            <span class="broadcast-text">{{ generateLogMessage(log) }}</span>
+            <span class="broadcast-time">{{ formatTime(log.timestamp) }}</span>
+            <span class="broadcast-text">{{ log.text }}</span>
           </div>
           <div v-if="broadcastLog.length === 0" class="broadcast-empty">
             [AWAITING DATA...]
@@ -321,7 +264,7 @@ function formatTime(ts: number): string {
 
 <style scoped>
 .squad-status {
-  width: 280px;
+  width: 256px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -329,12 +272,30 @@ function formatTime(ts: number): string {
   overflow: hidden;
 }
 
+.squad-status.embedded {
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  border-top: 1px solid var(--void-border);
+  background: rgba(8, 10, 14, 0.92);
+}
+
+.squad-status.broadcast-only {
+  width: 100%;
+  height: 100%;
+  background: rgba(10, 10, 14, 0.95);
+}
+
+.squad-status.vitals-only .broadcast-section {
+  display: none;
+}
+
 .squad-header {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  background: rgba(0, 240, 255, 0.04);
+  gap: 5px;
+  padding: 5px 8px;
+  background: rgba(0, 240, 255, 0.035);
   border-bottom: 1px solid var(--void-border);
 }
 
@@ -349,18 +310,18 @@ function formatTime(ts: number): string {
 
 .squad-title {
   font-family: var(--font-mono);
-  font-size: var(--text-header-sm);
+  font-size: 12px;
   font-weight: 700;
   color: var(--neon-cyan);
-  letter-spacing: 0.12em;
+  letter-spacing: 0.08em;
   flex: 1;
 }
 
 .squad-count {
   font-family: var(--font-mono);
-  font-size: var(--text-body-sm);
+  font-size: 10px;
   color: var(--text-muted);
-  padding: 2px 8px;
+  padding: 1px 5px;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--void-border);
 }
@@ -394,8 +355,8 @@ function formatTime(ts: number): string {
   overflow-y: visible;
   display: grid;
   grid-template-rows: repeat(4, auto);
-  gap: 4px;
-  padding: 4px 6px;
+  gap: 1px;
+  padding: 2px 4px 4px;
 }
 
 .squad-list::-webkit-scrollbar { width: 2px; }
@@ -403,10 +364,11 @@ function formatTime(ts: number): string {
 
 .member-card {
   display: flex;
-  gap: 8px;
-  align-items: flex-start;
-  padding: 8px;
-  background: rgba(0, 0, 0, 0.3);
+  gap: 5px;
+  align-items: center;
+  min-height: 72px;
+  padding: 5px;
+  background: rgba(0, 0, 0, 0.38);
   border: 1px solid var(--void-border);
   cursor: pointer;
   transition: all 0.2s var(--ease-fast);
@@ -422,16 +384,16 @@ function formatTime(ts: number): string {
 
 .member-card.active {
   border-color: var(--neon-cyan);
-  background: rgba(0, 240, 255, 0.04);
-  box-shadow: 0 0 10px rgba(0, 240, 255, 0.08);
+  background: rgba(0, 240, 255, 0.045);
+  box-shadow: 0 0 8px rgba(0, 240, 255, 0.07);
 }
 
 .member-card.active::before {
   content: '';
   position: absolute;
   left: 0;
-  top: 8px;
-  bottom: 8px;
+  top: 5px;
+  bottom: 5px;
   width: 2px;
   background: var(--neon-cyan);
   box-shadow: 0 0 6px var(--neon-cyan);
@@ -447,17 +409,81 @@ function formatTime(ts: number): string {
 
 .member-portrait {
   position: relative;
-  width: 56px;
-  height: 56px;
+  width: 66px;
+  height: 66px;
   flex-shrink: 0;
+  overflow: hidden;
+  clip-path: var(--clip-corner-sm);
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.portrait-ecg {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  bottom: 4px;
+  height: 12px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 0 3px;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.58), rgba(0, 0, 0, 0.2));
+  border: 1px solid rgba(57, 255, 20, 0.16);
+  border-radius: 2px;
+  z-index: 2;
+  overflow: hidden;
+}
+
+.portrait-ecg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(57, 255, 20, 0.12), transparent);
+  transform: translateX(-100%);
+  animation: ecgSweep 2.4s linear infinite;
+}
+
+.portrait-ecg.active {
+  border-color: rgba(57, 255, 20, 0.28);
+  box-shadow: 0 0 8px rgba(57, 255, 20, 0.14);
+}
+
+.ecg-dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--neon-green);
+  box-shadow: 0 0 5px rgba(57, 255, 20, 0.75);
+  flex-shrink: 0;
+  animation: ecgBlink 1.2s ease-in-out infinite;
+}
+
+.ecg-line {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  z-index: 1;
+}
+
+.ecg-line path {
+  fill: none;
+  stroke: rgba(57, 255, 20, 0.9);
+  stroke-width: 1.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 3px rgba(57, 255, 20, 0.45));
+  stroke-dasharray: 70;
+  stroke-dashoffset: 70;
+  animation: ecgPulse 1.8s linear infinite;
 }
 
 .portrait-img {
-  width: 56px;
-  height: 56px;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
   display: block;
-  filter: contrast(1.1) brightness(0.85);
+  filter: contrast(1.14) brightness(0.88);
+  transform-origin: center top;
 }
 
 .portrait-frame {
@@ -471,70 +497,12 @@ function formatTime(ts: number): string {
 
 .portrait-frame.glow {
   border-color: var(--neon-cyan);
-  box-shadow: 0 0 8px rgba(0, 240, 255, 0.2);
-}
-
-/* ECG wave overlay — ICU monitor style */
-.ecg-monitor {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 20px;
-  pointer-events: none;
-}
-
-.ecg-overlay {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0.5;
-}
-
-.ecg-line {
-  fill: none;
-  stroke: var(--neon-green);
-  stroke-width: 1.2;
-  stroke-dasharray: 400;
-  stroke-dashoffset: 400;
-  opacity: 0.3;
-  transition: opacity 0.3s;
-}
-
-.ecg-line.active {
-  opacity: 1;
-  animation: ecgScroll 2.5s linear infinite;
-  filter: drop-shadow(0 0 3px var(--neon-green)) drop-shadow(0 0 6px rgba(57,255,20,0.3));
-}
-
-@keyframes ecgScroll {
-  0% { stroke-dashoffset: 400; }
-  100% { stroke-dashoffset: 0; }
-}
-
-/* HR readout */
-.ecg-hr {
-  position: absolute;
-  top: 0;
-  right: 2px;
-  font-family: var(--font-mono);
-  font-size: 7px;
-  color: var(--text-muted);
-  opacity: 0;
-  transition: opacity 0.3s;
-}
-
-.ecg-hr.active {
-  opacity: 0.8;
-  color: var(--neon-green);
-  text-shadow: 0 0 3px rgba(57,255,20,0.3);
+  box-shadow: inset 0 0 0 1px rgba(0, 240, 255, 0.16), 0 0 8px rgba(0, 240, 255, 0.14);
 }
 
 .empty-portrait {
-  width: 56px;
-  height: 56px;
+  width: 66px;
+  height: 66px;
   border: 1px dashed rgba(255, 255, 255, 0.08);
   display: flex;
   align-items: center;
@@ -545,7 +513,7 @@ function formatTime(ts: number): string {
 }
 
 .empty-icon {
-  font-size: 20px;
+  font-size: 18px;
   color: rgba(255, 255, 255, 0.15);
 }
 
@@ -554,63 +522,60 @@ function formatTime(ts: number): string {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  justify-content: center;
+  gap: 3px;
 }
 
 .member-header {
   display: flex;
   align-items: baseline;
-  gap: 6px;
+  gap: 4px;
+  min-width: 0;
 }
 
 .member-name {
   font-family: var(--font-mono);
-  font-size: var(--text-label-sm);
+  font-size: 13px;
   font-weight: 700;
   color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  flex: 1;
 }
 
 .member-class {
   font-family: var(--font-mono);
-  font-size: var(--text-small);
-  color: var(--text-muted);
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.5);
   white-space: nowrap;
-}
-
-.member-role {
-  font-family: var(--font-mono);
-  font-size: var(--text-small);
-  color: rgba(255, 255, 255, 0.2);
-  margin-bottom: 2px;
+  flex-shrink: 0;
 }
 
 .empty-text {
   font-family: var(--font-mono);
-  font-size: var(--text-body-sm);
+  font-size: 11px;
   color: var(--text-muted);
-  padding-top: 18px;
+  padding-top: 17px;
 }
 
 .bar-group {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
 }
 
 .bar-row {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
 }
 
 .bar-label {
   font-family: var(--font-mono);
-  font-size: var(--text-small);
+  font-size: 10px;
   font-weight: 700;
-  width: 22px;
+  width: 16px;
   text-align: right;
   flex-shrink: 0;
 }
@@ -620,11 +585,12 @@ function formatTime(ts: number): string {
 
 .bar-track {
   flex: 1;
-  height: 5px;
+  height: 4px;
   background: rgba(255, 255, 255, 0.04);
   overflow: hidden;
   min-width: 0;
   border: 1px solid rgba(255, 255, 255, 0.03);
+  clip-path: polygon(0 0, calc(100% - 4px) 0, 100% 100%, 0 100%);
 }
 
 .bar-fill {
@@ -638,35 +604,13 @@ function formatTime(ts: number): string {
 
 .bar-num {
   font-family: var(--font-mono);
-  font-size: var(--text-small);
+  font-size: 10px;
   color: var(--text-muted);
   white-space: nowrap;
-  min-width: 0;
+  min-width: 50px;
+  text-align: right;
   font-variant-numeric: tabular-nums;
 }
-
-.stat-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 3px;
-  margin-top: 2px;
-}
-
-.stat-chip {
-  font-family: var(--font-mono);
-  font-size: var(--text-small);
-  padding: 2px 6px;
-  background: rgba(0, 0, 0, 0.3);
-  color: var(--text-muted);
-  border: 1px solid var(--void-border);
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
-  clip-path: var(--clip-corner-sm);
-}
-
-.stat-chip.tech { color: var(--neon-amber); border-color: rgba(255, 176, 0, 0.12); }
-.stat-chip.fant { color: var(--neon-cyan); border-color: rgba(0, 240, 255, 0.12); }
-.stat-chip.abn { color: var(--neon-purple); border-color: rgba(176, 38, 255, 0.12); }
 
 /* === Broadcast Terminal === */
 .broadcast-section {
@@ -675,6 +619,15 @@ function formatTime(ts: number): string {
   display: flex;
   flex-direction: column;
   min-height: 0;
+}
+
+.squad-status.embedded .broadcast-section {
+  flex: 0 0 auto;
+}
+
+.squad-status.broadcast-only .broadcast-section {
+  flex: 1;
+  border-top: none;
 }
 
 .broadcast-header {
@@ -721,7 +674,17 @@ function formatTime(ts: number): string {
   position: relative;
 }
 
-/* Terminal scanline — sweeping refresh effect */
+.squad-status.embedded .broadcast-terminal {
+  height: 168px;
+  flex: 0 0 auto;
+}
+
+.squad-status.broadcast-only .broadcast-terminal {
+  height: auto;
+  flex: 1;
+}
+
+/* Terminal scanline 鈥?sweeping refresh effect */
 .terminal-scanline {
   position: absolute;
   top: 0;
@@ -766,6 +729,22 @@ function formatTime(ts: number): string {
   100% { opacity: 1; transform: translateY(0); filter: blur(0); }
 }
 
+@keyframes ecgPulse {
+  0% { stroke-dashoffset: 70; opacity: 0.5; }
+  30% { opacity: 1; }
+  100% { stroke-dashoffset: 0; opacity: 0.9; }
+}
+
+@keyframes ecgSweep {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes ecgBlink {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+
 .broadcast-time {
   color: var(--text-muted);
   flex-shrink: 0;
@@ -793,3 +772,4 @@ function formatTime(ts: number): string {
   animation: flicker 2s ease-in-out infinite;
 }
 </style>
+

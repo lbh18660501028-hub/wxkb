@@ -7,8 +7,8 @@
         <div style="font-size:9px;color:var(--color-text-secondary);line-height:1.6;">你是一名被选中的轮回者，需要在恐怖副本中生存并变强。通过完成副本获得奖赏点和支线剧情，用于升级属性和购买物品。</div>
       </div>
       <div style="margin-bottom:12px;">
-        <div style="font-size:1em;font-weight:700;color:var(--color-accent-gold);margin-bottom:6px;">◉ 六大属性</div>
-        <div style="font-size:9px;color:var(--color-text-secondary);line-height:1.6;">智力、精神力、细胞活力、神经反应、肌肉强度、免疫强度 - 每个属性都有独特的作用。</div>
+        <div style="font-size:1em;font-weight:700;color:var(--color-accent-gold);margin-bottom:6px;">◉ 九大属性</div>
+        <div style="font-size:9px;color:var(--color-text-secondary);line-height:1.6;">身体：力量、敏捷、耐力 ／ 心智：智力、感知、决心 ／ 社交：风度、操控、沉着 - 每个属性都有独特的作用。</div>
       </div>
       <div style="margin-bottom:12px;">
         <div style="font-size:1em;font-weight:700;color:var(--color-accent-gold);margin-bottom:6px;">◉ 货币系统</div>
